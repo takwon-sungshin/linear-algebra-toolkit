@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear Algebra Toolkit</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2129;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --accent: #58a6ff;
+  --accent2: #3fb950;
+  --accent3: #f0883e;
+  --purple: #bc8cff;
+  --cyan: #56d4dd;
+  --red: #ff6b6b;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'IBM Plex Sans', 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+.container { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
+
+header {
+  text-align: center;
+  padding: 48px 0 36px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+header h1 {
+  font-size: 2.2em;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 10px;
+}
+header h1 span { color: var(--accent); }
+header p {
+  color: var(--text-dim);
+  font-size: 1em;
+  max-width: 600px;
+  margin: 0 auto;
+  font-weight: 300;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+.tool-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.tool-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.tool-card:nth-child(1)::before { background: var(--accent); }
+.tool-card:nth-child(2)::before { background: var(--accent3); }
+.tool-card:nth-child(3)::before { background: var(--accent2); }
+.tool-card:nth-child(4)::before { background: var(--purple); }
+.tool-card:nth-child(5)::before { background: var(--cyan); }
+
+.tool-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tool-card:nth-child(1) .tool-num { color: var(--accent); }
+.tool-card:nth-child(2) .tool-num { color: var(--accent3); }
+.tool-card:nth-child(3) .tool-num { color: var(--accent2); }
+.tool-card:nth-child(4) .tool-num { color: var(--purple); }
+.tool-card:nth-child(5) .tool-num { color: var(--cyan); }
+
+.tool-title {
+  font-size: 1.1em;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+.tool-desc {
+  font-size: 0.85em;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.tool-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+footer {
+  text-align: center;
+  margin-top: 48px;
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.82em;
+}
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+@media (max-width: 600px) {
+  header h1 { font-size: 1.6em; }
+  .tools-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Linear Algebra <span>Toolkit</span></h1>
+    <p>선형대수학의 핵심 계산을 단계별로 시각화하는 인터랙티브 도구 모음</p>
+  </header>
+
+  <div class="tools-grid">
+
+    <a class="tool-card" href="gaussian.html">
+      <div class="tool-num">Tool 01</div>
+      <div class="tool-title">Gaussian Elimination</div>
+      <div class="tool-desc">연립방정식 또는 첨가행렬에 대해 가우스 소거법을 단계별로 수행합니다.</div>
+      <div class="tool-tags">
+        <span class="tag">REF</span>
+        <span class="tag">행연산</span>
+        <span class="tag">연립방정식</span>
+      </div>
+    </a>
+
+    <a class="tool-card" href="cofactor-expansion.html">
+      <div class="tool-num">Tool 02</div>
+      <div class="tool-title">Determinant (행렬식)</div>
+      <div class="tool-desc">여인수전개를 통해 행렬식을 재귀적으로 계산하는 과정을 보여줍니다.</div>
+      <div class="tool-tags">
+        <span class="tag">여인수전개</span>
+        <span class="tag">소행렬</span>
+        <span class="tag">det</span>
+      </div>
+    </a>
+
+    <a class="tool-card" href="inverse-matrix.html">
+      <div class="tool-num">Tool 03</div>
+      <div class="tool-title">Inverse Matrix (역행렬)</div>
+      <div class="tool-desc">소행렬식, 여인수 행렬, 수반행렬을 거쳐 역행렬을 구합니다.</div>
+      <div class="tool-tags">
+        <span class="tag">여인수</span>
+        <span class="tag">adj(A)</span>
+        <span class="tag">A⁻¹</span>
+      </div>
+    </a>
+
+    <a class="tool-card" href="subspaces.html">
+      <div class="tool-num">Tool 04</div>
+      <div class="tool-title">Row · Column · Null Space</div>
+      <div class="tool-desc">행연산과 열연산을 통해 행공간, 열공간, 영공간의 기저를 span으로 표현합니다.</div>
+      <div class="tool-tags">
+        <span class="tag">행공간</span>
+        <span class="tag">열공간</span>
+        <span class="tag">영공간</span>
+        <span class="tag">rank</span>
+      </div>
+    </a>
+
+    <a class="tool-card" href="eigenvalues.html">
+      <div class="tool-num">Tool 05</div>
+      <div class="tool-title">Eigenvalues & Diagonalization</div>
+      <div class="tool-desc">특성방정식, 고유값, 고유공간을 구하고 대각화 A = PDP⁻¹까지 수행합니다.</div>
+      <div class="tool-tags">
+        <span class="tag">고유값</span>
+        <span class="tag">고유공간</span>
+        <span class="tag">대각화</span>
+        <span class="tag">PDP⁻¹</span>
+      </div>
+    </a>
+
+  </div>
+
+  <footer>
+    Linear Algebra Toolkit · 성신여자대학교 수리통계데이터사이언스학부
+  </footer>
+</div>
+<script data-goatcounter="https://takwon-sungshin.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Determinant — 행렬식 구하기</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2129;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --accent: #58a6ff;
+  --accent2: #3fb950;
+  --accent3: #f0883e;
+  --red: #ff6b6b;
+  --yellow: #ffd43b;
+  --purple: #bc8cff;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'IBM Plex Sans','Noto Sans KR',sans-serif;
+  background:var(--bg); color:var(--text);
+  min-height:100vh; line-height:1.6;
+}
+.container { max-width:1200px; margin:0 auto; padding:24px 20px; }
+header {
+  text-align:center; margin-bottom:32px; padding:32px 0 24px;
+  border-bottom:1px solid var(--border);
+}
+header h1 { font-size:1.8em; font-weight:700; letter-spacing:-0.5px; margin-bottom:8px; }
+header h1 span { color:var(--accent); }
+header p { color:var(--text-dim); font-size:0.95em; max-width:750px; margin:0 auto; font-weight:300; }
+
+.grid {
+  display:grid; grid-template-columns:340px 1fr;
+  gap:24px; align-items:start;
+}
+@media (max-width:960px) { .grid { grid-template-columns:1fr; } }
+
+.panel {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:20px; box-shadow:var(--shadow);
+}
+.panel-title {
+  font-size:0.78em; font-weight:600; text-transform:uppercase;
+  letter-spacing:1px; color:var(--text-dim); margin-bottom:16px;
+  display:flex; align-items:center; gap:8px;
+}
+.panel-title::before {
+  content:''; width:3px; height:14px;
+  background:var(--accent); border-radius:2px;
+}
+
+.btn {
+  padding:8px 16px; border-radius:6px; border:1px solid var(--border);
+  background:var(--surface2); color:var(--text); font-family:inherit;
+  font-size:0.85em; font-weight:500; cursor:pointer; transition:all 0.15s;
+}
+.btn:hover { background:var(--border); }
+.btn.primary { background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600; }
+.btn.primary:hover { opacity:0.85; }
+.btn.danger { border-color:var(--red); color:var(--red); }
+.btn.danger:hover { background:rgba(255,107,107,0.12); }
+
+/* Size */
+.size-row {
+  display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  font-family:'IBM Plex Mono',monospace; font-size:0.85em;
+}
+.size-row label { color:var(--text-dim); }
+.size-row select {
+  background:var(--bg); border:1px solid var(--border); border-radius:5px;
+  color:var(--text); padding:5px 8px; font-family:inherit; font-size:inherit;
+  cursor:pointer;
+}
+.size-row select:focus { outline:none; border-color:var(--accent); }
+
+/* Matrix input */
+.mat-wrap {
+  display:flex; align-items:center; justify-content:center;
+  gap:6px; margin:12px 0; overflow-x:auto; padding:4px 0;
+}
+.mat-bk {
+  font-size:3rem; font-weight:100; color:var(--accent);
+  font-family:'IBM Plex Mono',monospace; user-select:none; line-height:1;
+}
+.mat-grid { display:inline-grid; gap:5px; }
+.mat-grid input {
+  width:58px; height:38px; background:var(--bg); border:1px solid var(--border);
+  border-radius:5px; color:var(--text); font-family:'IBM Plex Mono',monospace;
+  font-size:0.9em; text-align:center; outline:none; transition:border-color 0.15s;
+}
+.mat-grid input:focus { border-color:var(--accent); }
+
+.controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.rand-row {
+  display:flex; gap:6px; margin-top:10px; padding-top:10px;
+  border-top:1px solid var(--border);
+}
+
+/* Expand row selector */
+.expand-row {
+  display:flex; align-items:center; gap:10px; margin-top:14px;
+  font-size:0.85em; color:var(--text-dim);
+}
+.expand-row select {
+  background:var(--bg); border:1px solid var(--border); border-radius:5px;
+  color:var(--text); padding:4px 8px; font-family:'IBM Plex Mono',monospace;
+  font-size:0.85em; cursor:pointer;
+}
+
+/* Steps area */
+.steps-area { display:none; }
+
+.step-node {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px; margin-bottom:12px;
+  animation:fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+.step-depth { display:inline-block; margin-right:6px; }
+.step-depth span {
+  display:inline-block; width:8px; height:8px; border-radius:50%;
+  margin-right:2px;
+}
+
+.step-title {
+  font-family:'IBM Plex Mono',monospace; font-size:0.82em;
+  font-weight:600; margin-bottom:10px; color:var(--text);
+}
+.step-formula {
+  font-family:'IBM Plex Mono',monospace; font-size:0.88em;
+  color:var(--text-dim); line-height:1.8; margin-bottom:10px;
+}
+.step-formula .sign { font-weight:700; }
+.step-formula .sign.pos { color:var(--accent2); }
+.step-formula .sign.neg { color:var(--red); }
+.step-formula .entry { color:var(--accent3); font-weight:600; }
+.step-formula .minor { color:var(--purple); }
+.step-formula .eq { color:var(--accent); font-weight:600; }
+
+/* 여인수 항 배경: (i+j) 짝수=파란, 홀수=빨간 */
+.cof-term {
+  display:inline-block; padding:2px 6px; border-radius:4px; margin:1px 0;
+}
+.cof-even { background:rgba(88,166,255,0.12); }
+.cof-odd  { background:rgba(255,107,107,0.12); }
+
+/* 상세 전개 내 각 항 블록 */
+.cof-block {
+  border-radius:6px; padding:6px 10px; margin:4px 0 4px 12px;
+}
+.cof-block-even { background:rgba(88,166,255,0.06); border-left:3px solid rgba(88,166,255,0.3); }
+.cof-block-odd  { background:rgba(255,107,107,0.06); border-left:3px solid rgba(255,107,107,0.3); }
+
+/* Inline matrix display */
+.imat {
+  display:inline-flex; align-items:center; gap:2px;
+  vertical-align:middle; margin:0 4px;
+}
+.imat .bk {
+  font-size:1.6em; font-weight:100; color:var(--accent);
+  font-family:'IBM Plex Mono',monospace; line-height:1;
+}
+.imat table { border-collapse:separate; border-spacing:1px; }
+.imat td {
+  font-family:'IBM Plex Mono',monospace; font-size:0.82em;
+  padding:2px 5px; text-align:right; border-radius:3px;
+}
+.imat td.hl-pick {
+  background:rgba(240,136,62,0.2); color:var(--accent3); font-weight:600;
+}
+.imat td.hl-strike {
+  color:var(--border); text-decoration:line-through;
+}
+.imat td.hl-minor {
+  background:rgba(188,140,255,0.1); color:var(--purple);
+}
+.imat td.hl-cof-even {
+  background:rgba(88,166,255,0.18); color:var(--accent); font-weight:600;
+}
+.imat td.hl-cof-odd {
+  background:rgba(255,107,107,0.18); color:var(--red); font-weight:600;
+}
+
+/* Result */
+.result-box {
+  background:rgba(63,185,80,0.06); border:1px solid rgba(63,185,80,0.25);
+  border-radius:var(--radius); padding:16px; margin-top:12px;
+}
+.result-box .label {
+  font-size:0.72em; color:var(--text-dim); text-transform:uppercase;
+  letter-spacing:0.5px; margin-bottom:4px;
+}
+.result-box .value {
+  font-family:'IBM Plex Mono',monospace; font-size:1.4em;
+  font-weight:700; color:var(--accent2);
+}
+
+.info-box {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px 16px; margin-top:16px;
+  font-size:0.82em; line-height:1.7; color:var(--text-dim);
+}
+.info-box strong { color:var(--text); font-weight:600; }
+.info-box code {
+  font-family:'IBM Plex Mono',monospace; background:var(--surface);
+  padding:1px 5px; border-radius:3px; font-size:0.95em; color:var(--accent);
+}
+
+/* Collapse toggle */
+.toggle-btn {
+  background:none; border:none; color:var(--accent); cursor:pointer;
+  font-family:inherit; font-size:0.78em; padding:2px 6px;
+  border-radius:4px; transition:background 0.15s;
+}
+.toggle-btn:hover { background:rgba(88,166,255,0.1); }
+
+@media (max-width:960px) {
+  header h1 { font-size:1.4em; }
+  .mat-grid input { width:48px; height:34px; font-size:0.8em; }
+  .mat-bk { font-size:2.2rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1><span>Determinant</span> (행렬식 구하기)</h1>
+    <p>정방행렬의 행렬식(determinant)을 여인수전개를 통해 단계별로 계산하는 과정을 보여줍니다.</p>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <div class="panel">
+        <div class="panel-title">Matrix (행렬 입력)</div>
+        <div class="size-row">
+          <label>크기 n:</label>
+          <input type="number" id="sizeInput" value="3" min="1" max="8">
+          <button class="btn" onclick="changeSize()">적용</button>
+        </div>
+        <div class="mat-wrap" id="matWrap"></div>
+        <div class="expand-row">
+          <label>전개할 행:</label>
+          <select id="expandRow"></select>
+          <label style="margin-left:8px;">또는 열:</label>
+          <select id="expandCol"></select>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Controls (실행)</div>
+        <div class="controls">
+          <button class="btn primary" onclick="compute()" style="flex:1;">▶ 여인수전개 실행</button>
+          <button class="btn danger" onclick="clearAll()">초기화</button>
+        </div>
+        <div class="rand-row">
+          <button class="btn" onclick="genRandom('rand')" style="flex:1;">🎲 랜덤</button>
+          <button class="btn" onclick="genRandom('sparse')" style="flex:1;">🎲 랜덤 (희소)</button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>여인수전개 (Cofactor Expansion)</strong><br>
+        <code>det(A) = Σ (-1)^(i+j) · a_ij · det(A_ij)</code><br><br>
+        여기서 <code>A_ij</code>는 i행 j열을 제거한 <strong>소행렬(submatrix)</strong>이고,
+        <code>(-1)^(i+j) · det(A_ij)</code>를 <strong>여인수(cofactor)</strong> <code>C_ij</code>라 합니다.<br>
+        임의의 행 또는 열을 선택하여 전개할 수 있으며, 0이 많은 행/열을 선택하면 계산이 간단해집니다.
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel steps-area" id="stepsArea">
+        <div class="panel-title">Step-by-Step (단계별 전개)</div>
+        <div id="stepsContent"></div>
+        <div class="result-box" id="resultBox" style="display:none;">
+          <div class="label">Determinant (행렬식)</div>
+          <div class="value" id="resultVal"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let n = 3;
+const DEPTH_COLORS = ['#58a6ff','#3fb950','#f0883e','#bc8cff','#ff6b6b','#ffd43b'];
+
+function changeSize() {
+  n = Math.max(1, Math.min(8, parseInt(document.getElementById('sizeInput').value) || 3));
+  document.getElementById('sizeInput').value = n;
+  buildMat();
+  buildExpandSelects();
+}
+
+function buildMat() {
+  const w = document.getElementById('matWrap');
+  let h = '<span class="mat-bk">[</span>';
+  h += `<div class="mat-grid" style="grid-template-columns:repeat(${n},1fr);">`;
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++)
+      h += `<input type="text" id="m${i}_${j}" inputmode="decimal">`;
+  h += '</div><span class="mat-bk">]</span>';
+  w.innerHTML = h;
+}
+
+function buildExpandSelects() {
+  let rh = '<option value="-1">— 선택 안함 —</option>';
+  let ch = '<option value="-1">— 선택 안함 —</option>';
+  for (let i = 0; i < n; i++) {
+    rh += `<option value="${i}"${i===0?' selected':''}>제 ${i+1} 행</option>`;
+    ch += `<option value="${i}">제 ${i+1} 열</option>`;
+  }
+  document.getElementById('expandRow').innerHTML = rh;
+  document.getElementById('expandCol').innerHTML = ch;
+  document.getElementById('expandRow').value = '0';
+  document.getElementById('expandCol').value = '-1';
+  // Link: if row selected, deselect col and vice versa
+  document.getElementById('expandRow').onchange = function() {
+    if (this.value !== '-1') document.getElementById('expandCol').value = '-1';
+  };
+  document.getElementById('expandCol').onchange = function() {
+    if (this.value !== '-1') document.getElementById('expandRow').value = '-1';
+  };
+}
+
+function readMat() {
+  const mat = [];
+  for (let i = 0; i < n; i++) {
+    const row = [];
+    for (let j = 0; j < n; j++) {
+      const v = parseFloat(document.getElementById(`m${i}_${j}`).value);
+      row.push(isNaN(v) ? 0 : v);
+    }
+    mat.push(row);
+  }
+  return mat;
+}
+
+// Fraction display
+function fr(num) {
+  if (Math.abs(num - Math.round(num)) < 1e-9) return '' + Math.round(num);
+  for (let d = 1; d <= 1000; d++) {
+    const nr = num * d;
+    if (Math.abs(nr - Math.round(nr)) < 1e-9) {
+      const nn = Math.round(nr), g = gcd(Math.abs(nn), d), t = nn/g, b = d/g;
+      return b === 1 ? '' + t : `${t}/${b}`;
+    }
+  }
+  return num.toFixed(4);
+}
+function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+
+// Random generators
+function rI(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function genRandom(type) {
+  buildMat();
+  if (type === 'sparse') {
+    // Many zeros
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < n; j++)
+        document.getElementById(`m${i}_${j}`).value = Math.random() < 0.5 ? 0 : rI(-3, 3);
+  } else {
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < n; j++)
+        document.getElementById(`m${i}_${j}`).value = rI(-5, 5);
+  }
+}
+
+function clearAll() {
+  buildMat();
+  document.getElementById('stepsArea').style.display = 'none';
+}
+
+// ── Cofactor expansion with step recording ──
+let stepsHtml = '';
+let nodeId = 0;
+
+function compute() {
+  const mat = readMat();
+  const er = parseInt(document.getElementById('expandRow').value);
+  const ec = parseInt(document.getElementById('expandCol').value);
+  const expandByRow = er >= 0;
+  const expandIdx = expandByRow ? er : (ec >= 0 ? ec : 0);
+
+  stepsHtml = '';
+  nodeId = 0;
+
+  const result = cofactorExpand(mat, n, 0, expandByRow, expandIdx);
+
+  document.getElementById('stepsContent').innerHTML = stepsHtml;
+  document.getElementById('resultVal').textContent = `det(A) = ${fr(result)}`;
+  document.getElementById('resultBox').style.display = 'block';
+  document.getElementById('stepsArea').style.display = 'block';
+  document.getElementById('stepsArea').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cofactorExpand(mat, sz, depth, expandByRow, expandIdx) {
+  const id = nodeId++;
+  const dc = DEPTH_COLORS[depth % DEPTH_COLORS.length];
+
+  // Base case: 1x1
+  if (sz === 1) {
+    stepsHtml += `<div class="step-node" style="margin-left:${depth*16}px;border-left:3px solid ${dc};">`;
+    stepsHtml += `<div class="step-title">${depthDots(depth)} 1×1 행렬</div>`;
+    stepsHtml += `<div class="step-formula"><span class="eq">= ${fr(mat[0][0])}</span></div>`;
+    stepsHtml += '</div>';
+    return mat[0][0];
+  }
+
+  // Base case: 2x2
+  if (sz === 2) {
+    const val = mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
+    stepsHtml += `<div class="step-node" style="margin-left:${depth*16}px;border-left:3px solid ${dc};">`;
+    stepsHtml += `<div class="step-title">${depthDots(depth)} 2×2 행렬식</div>`;
+    stepsHtml += `<div class="step-formula">`;
+    stepsHtml += renderInlineMat(mat, sz, -1, -1, -1, -1);
+    stepsHtml += ` = <span class="entry">${fr(mat[0][0])}</span>·<span class="entry">${fr(mat[1][1])}</span>`;
+    stepsHtml += ` − <span class="entry">${fr(mat[0][1])}</span>·<span class="entry">${fr(mat[1][0])}</span>`;
+    stepsHtml += ` <span class="eq">= ${fr(val)}</span>`;
+    stepsHtml += '</div></div>';
+    return val;
+  }
+
+  // General case: expand along chosen row or col
+  // For sub-expansions, always use row 0
+  const label = expandByRow ? `제 ${expandIdx+1} 행` : `제 ${expandIdx+1} 열`;
+  stepsHtml += `<div class="step-node" style="margin-left:${depth*16}px;border-left:3px solid ${dc};">`;
+  stepsHtml += `<div class="step-title">${depthDots(depth)} ${sz}×${sz} 행렬 — ${label} 전개</div>`;
+
+  // Build formula line
+  stepsHtml += '<div class="step-formula">';
+  stepsHtml += `det = `;
+
+  let total = 0;
+  const terms = [];
+
+  for (let k = 0; k < sz; k++) {
+    const i = expandByRow ? expandIdx : k;
+    const j = expandByRow ? k : expandIdx;
+    const sign = ((i + j) % 2 === 0) ? 1 : -1;
+    const entry = mat[i][j];
+
+    // Sign and entry
+    const signStr = sign > 0 ? '+' : '−';
+    const signCls = sign > 0 ? 'pos' : 'neg';
+    const cofCls = (i + j) % 2 === 0 ? 'cof-even' : 'cof-odd';
+
+    if (k > 0) stepsHtml += ' ';
+
+    stepsHtml += `<span class="cof-term ${cofCls}">`;
+    if (k === 0 && sign < 0) stepsHtml += `<span class="sign neg">−</span>`;
+    else if (k > 0) stepsHtml += `<span class="sign ${signCls}">${signStr}</span> `;
+
+    stepsHtml += `<span class="entry">${fr(Math.abs(entry))}</span>`;
+    stepsHtml += `·det(<span class="minor">A<sub>${i+1}${j+1}</sub></span>)`;
+    stepsHtml += `</span>`;
+
+    terms.push({ i, j, sign, entry });
+  }
+  stepsHtml += '</div>';
+
+  // Show the matrix with cofactor coloring on expand row/col
+  stepsHtml += '<div style="margin:8px 0;">';
+  stepsHtml += renderExpandMat(mat, sz, expandByRow, expandIdx);
+  stepsHtml += '</div>';
+
+  // Collapsible details toggle
+  stepsHtml += `<button class="toggle-btn" onclick="toggleDetail('det${id}')">▸ 전개 상세 보기</button>`;
+  stepsHtml += `<div id="det${id}" style="display:none;margin-top:8px;">`;
+
+  // Recurse for each term
+  const termResults = [];
+  for (let k = 0; k < sz; k++) {
+    const { i, j, sign, entry } = terms[k];
+    const blockCls = (i + j) % 2 === 0 ? 'cof-block-even' : 'cof-block-odd';
+    if (Math.abs(entry) < 1e-12) {
+      // Skip zero entries
+      stepsHtml += `<div class="cof-block ${blockCls}" style="font-family:'IBM Plex Mono',monospace;font-size:0.82em;color:var(--text-dim);">`;
+      stepsHtml += `a<sub>${i+1}${j+1}</sub> = 0 → 이 항은 0이므로 생략`;
+      stepsHtml += '</div>';
+      termResults.push(0);
+      continue;
+    }
+
+    // Build submatrix
+    const sub = [];
+    for (let ri = 0; ri < sz; ri++) {
+      if (ri === i) continue;
+      const row = [];
+      for (let ci = 0; ci < sz; ci++) {
+        if (ci === j) continue;
+        row.push(mat[ri][ci]);
+      }
+      sub.push(row);
+    }
+
+    stepsHtml += `<div class="cof-block ${blockCls}">`;
+
+    // Show which minor
+    stepsHtml += `<div style="margin:2px 0;font-family:'IBM Plex Mono',monospace;font-size:0.82em;">`;
+    stepsHtml += `<span class="minor">A<sub>${i+1}${j+1}</sub></span> = `;
+    stepsHtml += renderInlineMat(mat, sz, i, j, i, j);
+    stepsHtml += ' → ';
+    stepsHtml += renderInlineMat(sub, sz - 1, -1, -1, -1, -1);
+    stepsHtml += '</div>';
+
+    const minorVal = cofactorExpand(sub, sz - 1, depth + 1, true, 0);
+    const termVal = sign * entry * minorVal;
+    termResults.push(termVal);
+
+    stepsHtml += `<div style="margin:2px 0 4px 0;font-family:'IBM Plex Mono',monospace;font-size:0.82em;">`;
+    const s = sign > 0 ? '+' : '−';
+    stepsHtml += `→ <span class="sign ${sign>0?'pos':'neg'}">${s}</span> `;
+    stepsHtml += `<span class="entry">${fr(Math.abs(entry))}</span> · ${fr(minorVal)}`;
+    stepsHtml += ` = <span class="eq">${fr(termVal)}</span>`;
+    stepsHtml += '</div>';
+
+    stepsHtml += '</div>'; // close cof-block
+
+    total += termVal;
+  }
+
+  stepsHtml += '</div>'; // end collapsible
+
+  // Summary
+  stepsHtml += `<div class="step-formula" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">`;
+  stepsHtml += `det = `;
+  for (let k = 0; k < termResults.length; k++) {
+    if (k > 0) {
+      stepsHtml += termResults[k] >= 0 ? ' + ' : ' − ';
+      stepsHtml += `${fr(Math.abs(termResults[k]))}`;
+    } else {
+      stepsHtml += fr(termResults[k]);
+    }
+  }
+  total = termResults.reduce((a, b) => a + b, 0);
+  stepsHtml += ` <span class="eq">= ${fr(total)}</span>`;
+  stepsHtml += '</div>';
+
+  stepsHtml += '</div>'; // end step-node
+
+  return total;
+}
+
+function depthDots(depth) {
+  let h = '<span class="step-depth">';
+  for (let i = 0; i <= depth; i++) {
+    h += `<span style="background:${DEPTH_COLORS[i % DEPTH_COLORS.length]};"></span>`;
+  }
+  h += '</span>';
+  return h;
+}
+
+function renderInlineMat(mat, sz, strikeRow, strikeCol, pickRow, pickCol) {
+  let h = '<span class="imat"><span class="bk">[</span><table>';
+  for (let i = 0; i < sz; i++) {
+    h += '<tr>';
+    for (let j = 0; j < sz; j++) {
+      let cls = '';
+      if (i === strikeRow || j === strikeCol) cls = 'hl-strike';
+      else if (strikeRow >= 0 || strikeCol >= 0) cls = 'hl-minor';
+      if (i === pickRow && j === pickCol) cls = 'hl-pick';
+      h += `<td class="${cls}">${fr(mat[i][j])}</td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</table><span class="bk">]</span></span>';
+  return h;
+}
+
+function renderExpandMat(mat, sz, expandByRow, expandIdx) {
+  let h = '<span class="imat"><span class="bk">[</span><table>';
+  for (let i = 0; i < sz; i++) {
+    h += '<tr>';
+    for (let j = 0; j < sz; j++) {
+      let cls = '';
+      const isExpandCell = expandByRow ? (i === expandIdx) : (j === expandIdx);
+      if (isExpandCell) {
+        cls = (i + j) % 2 === 0 ? 'hl-cof-even' : 'hl-cof-odd';
+      }
+      h += `<td class="${cls}">${fr(mat[i][j])}</td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</table><span class="bk">]</span></span>';
+  return h;
+}
+
+function toggleDetail(id) {
+  const el = document.getElementById(id);
+  const btn = el.previousElementSibling;
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    btn.textContent = '▾ 전개 상세 접기';
+  } else {
+    el.style.display = 'none';
+    btn.textContent = '▸ 전개 상세 보기';
+  }
+}
+
+// Init
+buildMat();
+buildExpandSelects();
+</script>
+<script data-goatcounter="https://takwon-sungshin.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

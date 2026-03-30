@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inverse Matrix via Cofactors</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2129;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --accent: #58a6ff;
+  --accent2: #3fb950;
+  --accent3: #f0883e;
+  --red: #ff6b6b;
+  --yellow: #ffd43b;
+  --purple: #bc8cff;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'IBM Plex Sans','Noto Sans KR',sans-serif;
+  background:var(--bg); color:var(--text);
+  min-height:100vh; line-height:1.6;
+}
+.container { max-width:1200px; margin:0 auto; padding:24px 20px; }
+header {
+  text-align:center; margin-bottom:32px; padding:32px 0 24px;
+  border-bottom:1px solid var(--border);
+}
+header h1 { font-size:1.8em; font-weight:700; letter-spacing:-0.5px; margin-bottom:8px; }
+header h1 span { color:var(--accent); }
+header p { color:var(--text-dim); font-size:0.95em; max-width:750px; margin:0 auto; font-weight:300; }
+
+.grid { display:grid; grid-template-columns:340px 1fr; gap:24px; align-items:start; }
+@media (max-width:960px) { .grid { grid-template-columns:1fr; } }
+
+.panel {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:20px; box-shadow:var(--shadow);
+}
+.panel-title {
+  font-size:0.78em; font-weight:600; text-transform:uppercase;
+  letter-spacing:1px; color:var(--text-dim); margin-bottom:16px;
+  display:flex; align-items:center; gap:8px;
+}
+.panel-title::before {
+  content:''; width:3px; height:14px;
+  background:var(--accent); border-radius:2px;
+}
+
+.btn {
+  padding:8px 16px; border-radius:6px; border:1px solid var(--border);
+  background:var(--surface2); color:var(--text); font-family:inherit;
+  font-size:0.85em; font-weight:500; cursor:pointer; transition:all 0.15s;
+}
+.btn:hover { background:var(--border); }
+.btn.primary { background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600; }
+.btn.primary:hover { opacity:0.85; }
+.btn.danger { border-color:var(--red); color:var(--red); }
+.btn.danger:hover { background:rgba(255,107,107,0.12); }
+
+.size-row {
+  display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  font-family:'IBM Plex Mono',monospace; font-size:0.85em;
+}
+.size-row label { color:var(--text-dim); }
+.size-row input[type=number] {
+  width:52px; background:var(--bg); border:1px solid var(--border);
+  border-radius:5px; color:var(--text); padding:5px 6px; text-align:center;
+  font-family:inherit; font-size:inherit;
+}
+.size-row input:focus { outline:none; border-color:var(--accent); }
+
+.mat-wrap {
+  display:flex; align-items:center; justify-content:center;
+  gap:6px; margin:12px 0; overflow-x:auto; padding:4px 0;
+}
+.mat-bk {
+  font-size:3rem; font-weight:100; color:var(--accent);
+  font-family:'IBM Plex Mono',monospace; user-select:none; line-height:1;
+}
+.mat-grid { display:inline-grid; gap:5px; }
+.mat-grid input {
+  width:58px; height:38px; background:var(--bg); border:1px solid var(--border);
+  border-radius:5px; color:var(--text); font-family:'IBM Plex Mono',monospace;
+  font-size:0.9em; text-align:center; outline:none; transition:border-color 0.15s;
+}
+.mat-grid input:focus { border-color:var(--accent); }
+
+.controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.rand-row {
+  display:flex; gap:6px; margin-top:10px; padding-top:10px;
+  border-top:1px solid var(--border);
+}
+
+.info-box {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px 16px; margin-top:16px;
+  font-size:0.82em; line-height:1.7; color:var(--text-dim);
+}
+.info-box strong { color:var(--text); font-weight:600; }
+.info-box code {
+  font-family:'IBM Plex Mono',monospace; background:var(--surface);
+  padding:1px 5px; border-radius:3px; font-size:0.95em; color:var(--accent);
+}
+
+/* Steps */
+.steps-area { display:none; }
+
+.step-section {
+  margin-bottom:20px; padding-bottom:16px;
+  border-bottom:1px solid var(--border);
+}
+.step-section:last-child { border-bottom:none; }
+.step-section-title {
+  font-size:0.82em; font-weight:600; color:var(--accent);
+  margin-bottom:12px; font-family:'IBM Plex Mono',monospace;
+}
+
+/* Display matrix */
+.dmat {
+  display:inline-flex; align-items:center; gap:3px;
+  vertical-align:middle; margin:4px;
+}
+.dmat .bk {
+  font-size:2.4em; font-weight:100; color:var(--accent);
+  font-family:'IBM Plex Mono',monospace; line-height:1;
+}
+.dmat table { border-collapse:separate; border-spacing:2px; }
+.dmat td {
+  font-family:'IBM Plex Mono',monospace; font-size:0.85em; font-weight:500;
+  padding:4px 7px; text-align:right; border-radius:4px; min-width:42px;
+}
+
+/* Cofactor grid */
+.cof-grid {
+  display:grid; gap:6px; margin:10px 0;
+}
+.cof-cell {
+  background:var(--bg); border:1px solid var(--border); border-radius:6px;
+  padding:8px 10px; font-family:'IBM Plex Mono',monospace; font-size:0.8em;
+  line-height:1.6; transition:all 0.15s; cursor:default;
+}
+.cof-cell:hover { border-color:var(--accent); }
+.cof-cell .cof-label {
+  font-size:0.72em; color:var(--text-dim); margin-bottom:4px;
+}
+.cof-cell .cof-val {
+  font-weight:600; font-size:0.95em;
+}
+.cof-cell.even { border-left:3px solid rgba(88,166,255,0.4); }
+.cof-cell.odd  { border-left:3px solid rgba(255,107,107,0.4); }
+.cof-cell.even .cof-val { color:var(--accent); }
+.cof-cell.odd  .cof-val { color:var(--red); }
+
+/* Highlight in matrix */
+.dmat td.hl-pos { background:rgba(88,166,255,0.15); color:var(--accent); font-weight:600; }
+.dmat td.hl-neg { background:rgba(255,107,107,0.15); color:var(--red); font-weight:600; }
+.dmat td.hl-det { background:rgba(63,185,80,0.15); color:var(--accent2); font-weight:600; }
+
+/* Result matrix */
+.result-wrap {
+  display:flex; align-items:center; justify-content:center;
+  gap:8px; flex-wrap:wrap; margin:12px 0;
+  font-family:'IBM Plex Mono',monospace;
+}
+.result-wrap .scalar {
+  font-size:1.1em; color:var(--accent3); font-weight:600;
+}
+
+.result-box {
+  background:rgba(63,185,80,0.06); border:1px solid rgba(63,185,80,0.25);
+  border-radius:var(--radius); padding:16px; margin-top:12px;
+}
+.result-box .rlabel {
+  font-size:0.72em; color:var(--text-dim); text-transform:uppercase;
+  letter-spacing:0.5px; margin-bottom:4px;
+}
+.result-box.err {
+  border-color:rgba(255,107,107,0.35); background:rgba(255,107,107,0.04);
+}
+
+.toggle-btn {
+  background:none; border:none; color:var(--accent); cursor:pointer;
+  font-family:inherit; font-size:0.78em; padding:2px 6px;
+  border-radius:4px; transition:background 0.15s;
+}
+.toggle-btn:hover { background:rgba(88,166,255,0.1); }
+
+@media (max-width:960px) {
+  header h1 { font-size:1.4em; }
+  .mat-grid input { width:48px; height:34px; font-size:0.8em; }
+  .mat-bk { font-size:2.2rem; }
+  .dmat .bk { font-size:1.8em; }
+  .dmat td { font-size:0.78em; padding:3px 5px; min-width:36px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Inverse Matrix via <span>Cofactors</span> (여인수를 이용한 역행렬)</h1>
+    <p>모든 여인수(cofactor)를 구하고, 수반행렬(adjugate)을 이용하여 역행렬을 단계별로 계산합니다.</p>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <div class="panel">
+        <div class="panel-title">Matrix (행렬 입력)</div>
+        <div class="size-row">
+          <label>크기 n:</label>
+          <input type="number" id="sizeIn" value="3" min="1" max="6">
+          <button class="btn" onclick="applySize()">적용</button>
+        </div>
+        <div class="mat-wrap" id="matWrap"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Controls (실행)</div>
+        <div class="controls">
+          <button class="btn primary" onclick="compute()" style="flex:1;">▶ 역행렬 계산</button>
+          <button class="btn danger" onclick="clearAll()">초기화</button>
+        </div>
+        <div class="rand-row">
+          <button class="btn" onclick="genRand()" style="flex:1;">🎲 랜덤 행렬 생성</button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>여인수를 이용한 역행렬</strong><br>
+        1. 각 위치의 소행렬(submatrix): <code>A_ij</code> = i행 j열을 제거한 행렬<br>
+        2. 여인수(cofactor): <code>C_ij = (-1)^(i+j) · det(A_ij)</code><br>
+        3. 수반행렬: <code>adj(A) = [C_ij]ᵀ</code><br>
+        4. 역행렬: <code>A⁻¹ = (1/det(A)) · adj(A)</code><br><br>
+        <code>det(A) = 0</code>이면 역행렬이 존재하지 않습니다 (특이행렬).
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel steps-area" id="stepsArea">
+        <div class="panel-title">Step-by-Step (단계별 계산)</div>
+        <div id="stepsContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let n = 3;
+
+function applySize() {
+  n = Math.max(1, Math.min(6, parseInt(document.getElementById('sizeIn').value) || 3));
+  document.getElementById('sizeIn').value = n;
+  buildMat();
+}
+function buildMat() {
+  const w = document.getElementById('matWrap');
+  let h = '<span class="mat-bk">[</span>';
+  h += `<div class="mat-grid" style="grid-template-columns:repeat(${n},1fr);">`;
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++)
+      h += `<input type="text" id="m${i}_${j}" inputmode="decimal">`;
+  h += '</div><span class="mat-bk">]</span>';
+  w.innerHTML = h;
+}
+function readMat() {
+  const mat = [];
+  for (let i = 0; i < n; i++) {
+    const row = [];
+    for (let j = 0; j < n; j++) {
+      const v = parseFloat(document.getElementById(`m${i}_${j}`).value);
+      row.push(isNaN(v) ? 0 : v);
+    }
+    mat.push(row);
+  }
+  return mat;
+}
+
+function fr(num) {
+  if (Math.abs(num - Math.round(num)) < 1e-9) return '' + Math.round(num);
+  for (let d = 1; d <= 1000; d++) {
+    const nr = num * d;
+    if (Math.abs(nr - Math.round(nr)) < 1e-9) {
+      const nn = Math.round(nr), g = gcd(Math.abs(nn), d), t = nn/g, b = d/g;
+      return b === 1 ? '' + t : `${t}/${b}`;
+    }
+  }
+  return num.toFixed(4);
+}
+function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+
+// Determinant (recursive cofactor expansion along row 0)
+function det(M) {
+  const s = M.length;
+  if (s === 1) return M[0][0];
+  if (s === 2) return M[0][0]*M[1][1] - M[0][1]*M[1][0];
+  let d = 0;
+  for (let j = 0; j < s; j++) {
+    const sub = [];
+    for (let i = 1; i < s; i++) {
+      const row = [];
+      for (let k = 0; k < s; k++) if (k !== j) row.push(M[i][k]);
+      sub.push(row);
+    }
+    d += ((j % 2 === 0) ? 1 : -1) * M[0][j] * det(sub);
+  }
+  return d;
+}
+
+// Submatrix removing row r, col c
+function subMat(M, r, c) {
+  const sub = [];
+  for (let i = 0; i < M.length; i++) {
+    if (i === r) continue;
+    const row = [];
+    for (let j = 0; j < M.length; j++) {
+      if (j === c) continue;
+      row.push(M[i][j]);
+    }
+    sub.push(row);
+  }
+  return sub;
+}
+
+// Random
+function rI(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function genRand() {
+  buildMat();
+  let mat;
+  do {
+    mat = [];
+    for (let i = 0; i < n; i++) {
+      const row = [];
+      for (let j = 0; j < n; j++) row.push(rI(-4, 4));
+      mat.push(row);
+    }
+  } while (Math.abs(det(mat)) < 0.5);
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++)
+      document.getElementById(`m${i}_${j}`).value = mat[i][j];
+}
+
+function clearAll() {
+  buildMat();
+  document.getElementById('stepsArea').style.display = 'none';
+}
+
+function compute() {
+  const A = readMat();
+  let html = '';
+
+  // 원본 행렬 표시
+  html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;">';
+  html += '<span style="font-family:IBM Plex Mono,monospace;font-size:0.9em;">A =</span>';
+  html += renderDMat(A, n);
+  html += '</div>';
+
+  // ── Step 1: 모든 소행렬식 계산 ──
+  html += '<div class="step-section">';
+  html += '<div class="step-section-title">Step 1. 모든 소행렬 A_ij 와 소행렬식 det(A_ij)를 계산한다.</div>';
+  html += `<div style="font-size:0.82em;color:var(--text-dim);margin-bottom:10px;">A<sub>ij</sub> = i행 j열을 제거한 소행렬,  det(A<sub>ij</sub>) = |A<sub>ij</sub>| — 총 ${n*n}개</div>`;
+
+  const minorMat = []; // minorMat[i][j] = det(M_ij)
+  html += `<div class="cof-grid" style="grid-template-columns:repeat(${Math.min(n, 4)},1fr);">`;
+
+  for (let i = 0; i < n; i++) {
+    minorMat.push([]);
+    for (let j = 0; j < n; j++) {
+      const M = subMat(A, i, j);
+      const minorVal = det(M);
+      minorMat[i].push(minorVal);
+
+      html += '<div class="cof-cell">';
+      html += `<div class="cof-label">det(A<sub>${i+1}${j+1}</sub>)</div>`;
+      html += `<div class="cof-val" style="color:var(--text);">${fr(minorVal)}</div>`;
+      if (n <= 3) {
+        html += '<div style="font-size:0.68em;color:var(--text-dim);margin-top:3px;">|A<sub>' + (i+1) + (j+1) + '</sub>| = det';
+        html += renderSmallMat(M, n - 1);
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+  }
+  html += '</div>';
+
+  // 소행렬식 행렬로 표시
+  html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;">';
+  html += '<span style="font-family:IBM Plex Mono,monospace;font-size:0.85em;">[det(A<sub>ij</sub>)] =</span>';
+  html += renderDMat(minorMat, n);
+  html += '</div>';
+  html += '</div>';
+
+  // ── Step 2: 부호를 넣어 여인수 행렬 C ──
+  html += '<div class="step-section">';
+  html += '<div class="step-section-title">Step 2. 소행렬에 부호를 넣어 여인수 행렬 C를 만든다.</div>';
+  html += '<div style="font-size:0.82em;color:var(--text-dim);margin-bottom:10px;">C<sub>ij</sub> = (-1)<sup>i+j</sup> · det(A<sub>ij</sub>)</div>';
+
+  // 부호 패턴 표시
+  html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">';
+  html += '<span style="font-family:IBM Plex Mono,monospace;font-size:0.82em;color:var(--text-dim);">부호 패턴:</span>';
+  html += renderSignMat(n);
+  html += '</div>';
+
+  const cofMat = [];
+  html += `<div class="cof-grid" style="grid-template-columns:repeat(${Math.min(n, 4)},1fr);">`;
+
+  for (let i = 0; i < n; i++) {
+    cofMat.push([]);
+    for (let j = 0; j < n; j++) {
+      const sign = ((i + j) % 2 === 0) ? 1 : -1;
+      const cofVal = sign * minorMat[i][j];
+      cofMat[i].push(cofVal);
+
+      const parity = (i + j) % 2 === 0 ? 'even' : 'odd';
+      const signStr = sign > 0 ? '+' : '−';
+
+      html += `<div class="cof-cell ${parity}">`;
+      html += `<div class="cof-label">C<sub>${i+1}${j+1}</sub></div>`;
+      html += `<div class="cof-val">${fr(cofVal)}</div>`;
+      html += `<div style="font-size:0.7em;color:var(--text-dim);margin-top:2px;">(${signStr}1) · det(A<sub>${i+1}${j+1}</sub>) = (${signStr}1) · ${fr(minorMat[i][j])}</div>`;
+      html += '</div>';
+    }
+  }
+  html += '</div>';
+
+  // 여인수 행렬 표시
+  html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;">';
+  html += '<span style="font-family:IBM Plex Mono,monospace;font-size:0.85em;">C =</span>';
+  html += renderDMatCof(cofMat, n);
+  html += '</div>';
+  html += '</div>';
+
+  // ── Step 3: 수반행렬 adj A ──
+  const adj = [];
+  for (let i = 0; i < n; i++) {
+    adj.push([]);
+    for (let j = 0; j < n; j++) {
+      adj[i].push(cofMat[j][i]); // transpose
+    }
+  }
+
+  html += '<div class="step-section">';
+  html += '<div class="step-section-title">Step 3. 수반행렬 adj A를 계산한다.</div>';
+  html += '<div style="font-size:0.82em;color:var(--text-dim);margin-bottom:10px;">adj(A) = Cᵀ (여인수 행렬의 전치)</div>';
+
+  html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+  html += '<span style="font-family:IBM Plex Mono,monospace;font-size:0.85em;">adj(A) = Cᵀ =</span>';
+  html += renderDMat(adj, n);
+  html += '</div>';
+  html += '</div>';
+
+  // ── Step 4: 행렬식 & 역행렬 ──
+  const detA = det(A);
+
+  html += '<div class="step-section">';
+  html += '<div class="step-section-title">Step 4. 행렬식을 계산하고 역행렬을 구한다.</div>';
+
+  // det 계산 (1행 전개로 보여주기)
+  html += '<div style="font-family:IBM Plex Mono,monospace;font-size:0.88em;margin-bottom:10px;">';
+  html += 'det(A) = ';
+  for (let j = 0; j < n; j++) {
+    const sign = ((0 + j) % 2 === 0) ? 1 : -1;
+    const signStr = sign > 0 ? '+' : '−';
+    const cls = j % 2 === 0 ? 'cof-even' : 'cof-odd';
+    if (j === 0) {
+      html += `<span class="cof-term ${cls}">`;
+      html += `<span class="entry">${fr(A[0][j])}</span>·<span style="color:var(--text-dim);">C<sub>1${j+1}</sub></span>`;
+      html += '</span>';
+    } else {
+      html += ` <span class="cof-term ${cls}"><span class="sign ${sign > 0 ? 'pos' : 'neg'}">${signStr}</span> `;
+      html += `<span class="entry">${fr(Math.abs(A[0][j]))}</span>·<span style="color:var(--text-dim);">C<sub>1${j+1}</sub></span>`;
+      html += '</span>';
+    }
+  }
+  html += '</div>';
+
+  // 숫자 대입
+  html += '<div style="font-family:IBM Plex Mono,monospace;font-size:0.88em;margin-bottom:10px;color:var(--text-dim);">';
+  html += '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= ';
+  for (let j = 0; j < n; j++) {
+    const termVal = A[0][j] * cofMat[0][j];
+    if (j > 0) html += termVal >= 0 ? ' + ' : ' − ';
+    if (j === 0) html += fr(termVal);
+    else html += fr(Math.abs(termVal));
+  }
+  html += ` <span style="color:var(--accent);font-weight:700;">= ${fr(detA)}</span>`;
+  html += '</div>';
+
+  if (Math.abs(detA) < 1e-12) {
+    html += '<div class="result-box err" style="margin-top:12px;">';
+    html += '<div class="rlabel">결과</div>';
+    html += '<div style="font-family:IBM Plex Mono,monospace;font-size:1em;color:var(--red);font-weight:600;">det(A) = 0 → 역행렬이 존재하지 않습니다 (특이행렬)</div>';
+    html += '</div></div>';
+    document.getElementById('stepsContent').innerHTML = html;
+    document.getElementById('stepsArea').style.display = 'block';
+    document.getElementById('stepsArea').scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+
+  // 역행렬 = (1/det) * adj
+  const inv = [];
+  for (let i = 0; i < n; i++) {
+    inv.push([]);
+    for (let j = 0; j < n; j++) {
+      inv[i].push(adj[i][j] / detA);
+    }
+  }
+
+  html += '<div style="font-family:IBM Plex Mono,monospace;font-size:0.92em;margin:12px 0;">';
+  html += 'A⁻¹ = <span class="scalar">1/det(A)</span> · adj(A) = <span class="scalar">1/' + fr(detA) + '</span> · ';
+  html += renderDMat(adj, n);
+  html += '</div>';
+
+  html += '<div class="result-box">';
+  html += '<div class="rlabel">A⁻¹ =</div>';
+  html += '<div style="display:flex;justify-content:center;margin-top:6px;">';
+  html += renderDMat(inv, n);
+  html += '</div>';
+  html += '</div>';
+
+  // Verification
+  html += '<div style="margin-top:12px;">';
+  html += '<button class="toggle-btn" onclick="toggleEl(\'verify\')">▸ 검증: A · A⁻¹ = I 확인</button>';
+  html += '<div id="verify" style="display:none;margin-top:8px;">';
+  const prod = [];
+  for (let i = 0; i < n; i++) {
+    prod.push([]);
+    for (let j = 0; j < n; j++) {
+      let s = 0;
+      for (let k = 0; k < n; k++) s += A[i][k] * inv[k][j];
+      prod[i].push(Math.abs(s) < 1e-9 ? 0 : s);
+    }
+  }
+  html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;">';
+  html += '<span style="font-family:IBM Plex Mono,monospace;font-size:0.85em;">A · A⁻¹ =</span>';
+  html += renderDMat(prod, n);
+  html += '<span style="font-family:IBM Plex Mono,monospace;font-size:0.85em;color:var(--accent2);font-weight:600;">= I ✓</span>';
+  html += '</div>';
+  html += '</div></div>';
+
+  html += '</div>';
+
+  document.getElementById('stepsContent').innerHTML = html;
+  document.getElementById('stepsArea').style.display = 'block';
+  document.getElementById('stepsArea').scrollIntoView({ behavior: 'smooth' });
+}
+
+function renderDMat(mat, sz) {
+  let h = '<span class="dmat"><span class="bk">[</span><table>';
+  for (let i = 0; i < sz; i++) {
+    h += '<tr>';
+    for (let j = 0; j < sz; j++) {
+      h += `<td>${fr(mat[i][j])}</td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</table><span class="bk">]</span></span>';
+  return h;
+}
+
+function renderDMatCof(mat, sz) {
+  let h = '<span class="dmat"><span class="bk">[</span><table>';
+  for (let i = 0; i < sz; i++) {
+    h += '<tr>';
+    for (let j = 0; j < sz; j++) {
+      const cls = (i + j) % 2 === 0 ? 'hl-pos' : 'hl-neg';
+      h += `<td class="${cls}">${fr(mat[i][j])}</td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</table><span class="bk">]</span></span>';
+  return h;
+}
+
+function renderSignMat(sz) {
+  let h = '<span class="dmat"><span class="bk">[</span><table>';
+  for (let i = 0; i < sz; i++) {
+    h += '<tr>';
+    for (let j = 0; j < sz; j++) {
+      const cls = (i + j) % 2 === 0 ? 'hl-pos' : 'hl-neg';
+      const s = (i + j) % 2 === 0 ? '+' : '−';
+      h += `<td class="${cls}">${s}</td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</table><span class="bk">]</span></span>';
+  return h;
+}
+
+function renderSmallMat(mat, sz) {
+  let h = '<span style="display:inline-flex;align-items:center;gap:1px;vertical-align:middle;margin:0 2px;">';
+  h += '<span style="font-size:1.2em;color:var(--accent);font-weight:100;">|</span><table style="border-collapse:separate;border-spacing:1px;display:inline-table;">';
+  for (let i = 0; i < sz; i++) {
+    h += '<tr>';
+    for (let j = 0; j < sz; j++) {
+      h += `<td style="padding:1px 3px;font-size:0.9em;">${fr(mat[i][j])}</td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</table><span style="font-size:1.2em;color:var(--accent);font-weight:100;">|</span></span>';
+  return h;
+}
+
+function toggleEl(id) {
+  const el = document.getElementById(id);
+  const btn = el.previousElementSibling;
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+    btn.textContent = btn.textContent.replace('▸', '▾').replace('보기', '접기').replace('확인', '접기');
+  } else {
+    el.style.display = 'none';
+    btn.textContent = btn.textContent.replace('▾', '▸').replace('접기', '확인');
+  }
+}
+
+buildMat();
+</script>
+<script data-goatcounter="https://takwon-sungshin.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subspaces — 행공간 · 열공간 · 영공간</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2129;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --accent: #58a6ff;
+  --accent2: #3fb950;
+  --accent3: #f0883e;
+  --red: #ff6b6b;
+  --yellow: #ffd43b;
+  --purple: #bc8cff;
+  --cyan: #56d4dd;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family:'IBM Plex Sans','Noto Sans KR',sans-serif;
+  background:var(--bg); color:var(--text);
+  min-height:100vh; line-height:1.6;
+}
+.container { max-width:1200px; margin:0 auto; padding:24px 20px; }
+header {
+  text-align:center; margin-bottom:32px; padding:32px 0 24px;
+  border-bottom:1px solid var(--border);
+}
+header h1 { font-size:1.8em; font-weight:700; letter-spacing:-0.5px; margin-bottom:8px; }
+header h1 span { color:var(--accent); }
+header p { color:var(--text-dim); font-size:0.95em; max-width:800px; margin:0 auto; font-weight:300; }
+
+.grid { display:grid; grid-template-columns:340px 1fr; gap:24px; align-items:start; }
+@media (max-width:960px) { .grid { grid-template-columns:1fr; } }
+
+.panel {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:20px; box-shadow:var(--shadow);
+}
+.panel-title {
+  font-size:0.78em; font-weight:600; text-transform:uppercase;
+  letter-spacing:1px; color:var(--text-dim); margin-bottom:16px;
+  display:flex; align-items:center; gap:8px;
+}
+.panel-title::before {
+  content:''; width:3px; height:14px;
+  background:var(--accent); border-radius:2px;
+}
+
+.btn {
+  padding:8px 16px; border-radius:6px; border:1px solid var(--border);
+  background:var(--surface2); color:var(--text); font-family:inherit;
+  font-size:0.85em; font-weight:500; cursor:pointer; transition:all 0.15s;
+}
+.btn:hover { background:var(--border); }
+.btn.primary { background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600; }
+.btn.primary:hover { opacity:0.85; }
+.btn.danger { border-color:var(--red); color:var(--red); }
+.btn.danger:hover { background:rgba(255,107,107,0.12); }
+
+.size-row {
+  display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  font-family:'IBM Plex Mono',monospace; font-size:0.85em;
+}
+.size-row label { color:var(--text-dim); }
+.size-row input[type=number] {
+  width:52px; background:var(--bg); border:1px solid var(--border);
+  border-radius:5px; color:var(--text); padding:5px 6px; text-align:center;
+  font-family:inherit; font-size:inherit;
+}
+.size-row input:focus { outline:none; border-color:var(--accent); }
+
+.mat-wrap {
+  display:flex; align-items:center; justify-content:center;
+  gap:6px; margin:12px 0; overflow-x:auto; padding:4px 0;
+}
+.mat-bk {
+  font-size:3rem; font-weight:100; color:var(--accent);
+  font-family:'IBM Plex Mono',monospace; user-select:none; line-height:1;
+}
+.mat-grid { display:inline-grid; gap:5px; }
+.mat-grid input {
+  width:58px; height:38px; background:var(--bg); border:1px solid var(--border);
+  border-radius:5px; color:var(--text); font-family:'IBM Plex Mono',monospace;
+  font-size:0.9em; text-align:center; outline:none; transition:border-color 0.15s;
+}
+.mat-grid input:focus { border-color:var(--accent); }
+
+.controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.rand-row {
+  display:flex; gap:6px; margin-top:10px; padding-top:10px;
+  border-top:1px solid var(--border);
+}
+
+.steps-area { display:none; }
+.step-section {
+  margin-bottom:20px; padding-bottom:16px;
+  border-bottom:1px solid var(--border);
+}
+.step-section:last-child { border-bottom:none; margin-bottom:0; }
+.step-section-title {
+  font-size:0.82em; font-weight:600; margin-bottom:10px;
+  font-family:'IBM Plex Mono',monospace;
+}
+.step-desc {
+  font-size:0.85em; color:var(--text-dim); margin-bottom:10px; line-height:1.7;
+}
+.formula {
+  font-family:'IBM Plex Mono',monospace; color:var(--accent3); font-weight:500;
+}
+
+.dmat {
+  display:inline-flex; align-items:center; gap:3px;
+  vertical-align:middle; margin:4px;
+}
+.dmat .bk {
+  font-size:2.4em; font-weight:100; color:var(--accent);
+  font-family:'IBM Plex Mono',monospace; line-height:1;
+}
+.dmat table { border-collapse:separate; border-spacing:2px; }
+.dmat td {
+  font-family:'IBM Plex Mono',monospace; font-size:0.85em; font-weight:500;
+  padding:4px 7px; text-align:right; border-radius:4px; min-width:42px;
+}
+.dmat td.hl-pivot { background:rgba(88,166,255,0.15); color:var(--accent); font-weight:700; }
+.dmat td.hl-changed { background:rgba(63,185,80,0.1); color:var(--accent2); }
+.dmat td.hl-row { background:rgba(88,166,255,0.08); }
+.dmat td.hl-zero { color:var(--border); }
+
+.span-box { border-radius:var(--radius); padding:14px 16px; margin-top:10px; }
+.span-box h3 {
+  font-family:'IBM Plex Mono',monospace; font-size:0.82em;
+  margin-bottom:10px; display:flex; align-items:center; gap:6px;
+}
+.span-box .dim-tag {
+  font-size:0.7em; padding:2px 8px; border-radius:4px; font-weight:600;
+}
+.span-row {
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  font-family:'IBM Plex Mono',monospace; font-size:0.9em; margin-top:6px;
+}
+.col-vec {
+  display:inline-flex; flex-direction:column; align-items:center;
+  padding:3px 7px; border-radius:3px; margin:0 2px;
+}
+.col-vec div { font-size:0.85em; line-height:1.5; }
+
+.span-box.row-space {
+  background:rgba(88,166,255,0.05); border:1px solid rgba(88,166,255,0.25);
+}
+.span-box.row-space h3 { color:var(--accent); }
+.span-box.row-space .dim-tag { background:rgba(88,166,255,0.15); color:var(--accent); }
+
+.span-box.col-space {
+  background:rgba(240,136,62,0.05); border:1px solid rgba(240,136,62,0.25);
+}
+.span-box.col-space h3 { color:var(--accent3); }
+.span-box.col-space .dim-tag { background:rgba(240,136,62,0.15); color:var(--accent3); }
+
+.span-box.null-space {
+  background:rgba(188,140,255,0.05); border:1px solid rgba(188,140,255,0.25);
+}
+.span-box.null-space h3 { color:var(--purple); }
+.span-box.null-space .dim-tag { background:rgba(188,140,255,0.15); color:var(--purple); }
+
+.op-line {
+  font-family:'IBM Plex Mono',monospace; font-size:0.82em;
+  color:var(--text-dim); padding:3px 0; line-height:1.6;
+}
+
+.toggle-btn {
+  background:none; border:none; color:var(--accent); cursor:pointer;
+  font-family:inherit; font-size:0.78em; padding:2px 6px;
+  border-radius:4px; transition:background 0.15s;
+}
+.toggle-btn:hover { background:rgba(88,166,255,0.1); }
+
+.info-box {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--radius); padding:14px 16px; margin-top:16px;
+  font-size:0.82em; line-height:1.7; color:var(--text-dim);
+}
+.info-box strong { color:var(--text); font-weight:600; }
+.info-box code {
+  font-family:'IBM Plex Mono',monospace; background:var(--surface);
+  padding:1px 5px; border-radius:3px; font-size:0.95em; color:var(--accent);
+}
+
+/* null space derivation */
+.null-deriv {
+  background:var(--bg); border:1px solid var(--border); border-radius:8px;
+  padding:12px 14px; margin:10px 0; font-family:'IBM Plex Mono',monospace;
+  font-size:0.82em; line-height:1.8;
+}
+.null-deriv .var-name { color:var(--purple); font-weight:600; }
+.null-deriv .free-var { color:var(--accent3); font-weight:600; }
+
+@media (max-width:960px) {
+  header h1 { font-size:1.4em; }
+  .mat-grid input { width:48px; height:34px; font-size:0.8em; }
+  .mat-bk { font-size:2.2rem; }
+  .dmat .bk { font-size:1.8em; }
+  .dmat td { font-size:0.78em; padding:3px 5px; min-width:36px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Row Space · <span>Column Space</span> · Null Space</h1>
+    <p>행렬의 행공간(Row Space), 열공간(Column Space), 영공간(Null Space)을 행연산과 열연산을 통해 단계별로 구하고, 각각의 기저를 span으로 표현합니다.</p>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <div class="panel">
+        <div class="panel-title">Matrix (행렬 입력)</div>
+        <div class="size-row">
+          <label>행:</label>
+          <input type="number" id="rowIn" value="3" min="1" max="8">
+          <label>열:</label>
+          <input type="number" id="colIn" value="4" min="1" max="8">
+          <button class="btn" onclick="applySize()">적용</button>
+        </div>
+        <div class="mat-wrap" id="matWrap"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Controls (실행)</div>
+        <div class="controls">
+          <button class="btn primary" onclick="compute()" style="flex:1;">▶ 부분공간 계산</button>
+          <button class="btn danger" onclick="clearAll()">초기화</button>
+        </div>
+        <div class="rand-row">
+          <button class="btn" onclick="genRand('full')" style="flex:1;">🎲 랜덤 (full rank)</button>
+          <button class="btn" onclick="genRand('deficient')" style="flex:1;">🎲 랜덤 (rank 부족)</button>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>부분공간 요약</strong><br>
+        <code>Row(A)</code>: REF의 영이 아닌 행들 (행벡터)<br>
+        <code>Null(A)</code>: Ax = 0의 해공간 (REF → 후진 대입)<br>
+        <code>Col(A)</code>: 열연산으로 구한 영이 아닌 열들<br><br>
+        rank(A) + nullity(A) = n (열의 수)
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel steps-area" id="stepsArea">
+        <div class="panel-title">Step-by-Step (단계별 계산)</div>
+        <div id="stepsContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let nR=3, nC=4;
+
+function applySize(){
+  nR=Math.max(1,Math.min(8,parseInt(document.getElementById('rowIn').value)||3));
+  nC=Math.max(1,Math.min(8,parseInt(document.getElementById('colIn').value)||4));
+  document.getElementById('rowIn').value=nR;
+  document.getElementById('colIn').value=nC;
+  buildMat();
+}
+function buildMat(){
+  const w=document.getElementById('matWrap');
+  let h='<span class="mat-bk">[</span>';
+  h+=`<div class="mat-grid" style="grid-template-columns:repeat(${nC},1fr);">`;
+  for(let i=0;i<nR;i++)for(let j=0;j<nC;j++)
+    h+=`<input type="text" id="m${i}_${j}" inputmode="decimal">`;
+  h+='</div><span class="mat-bk">]</span>';
+  w.innerHTML=h;
+}
+function readMat(){
+  const mat=[];
+  for(let i=0;i<nR;i++){const row=[];for(let j=0;j<nC;j++){const v=parseFloat(document.getElementById(`m${i}_${j}`).value);row.push(isNaN(v)?0:v);}mat.push(row);}
+  return mat;
+}
+
+function fr(num){
+  if(Math.abs(num-Math.round(num))<1e-9)return''+Math.round(num);
+  for(let d=1;d<=1000;d++){const nr=num*d;if(Math.abs(nr-Math.round(nr))<1e-9){const nn=Math.round(nr),g=gcd(Math.abs(nn),d),t=nn/g,b=d/g;return b===1?''+t:`${t}/${b}`;}}
+  return num.toFixed(4);
+}
+function gcd(a,b){return b?gcd(b,a%b):a;}
+function cl(m){return m.map(r=>[...r]);}
+function cln(v){return Math.abs(v)<1e-12?0:v;}
+function rI(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+
+function genRand(type){
+  buildMat();
+  if(type==='full'){
+    for(let i=0;i<nR;i++)for(let j=0;j<nC;j++)document.getElementById(`m${i}_${j}`).value=rI(-4,4);
+  } else {
+    const ind=Math.max(1,Math.min(nR,nC)-1);
+    const mat=[];
+    for(let i=0;i<ind;i++){const row=[];for(let j=0;j<nC;j++)row.push(rI(-3,3));mat.push(row);}
+    for(let i=ind;i<nR;i++){
+      const co=[];for(let k=0;k<ind;k++)co.push(rI(-2,2));
+      const row=Array(nC).fill(0);
+      for(let j=0;j<nC;j++)for(let k=0;k<ind;k++)row[j]+=co[k]*mat[k][j];
+      mat.push(row);
+    }
+    for(let i=nR-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[mat[i],mat[j]]=[mat[j],mat[i]];}
+    for(let i=0;i<nR;i++)for(let j=0;j<nC;j++)document.getElementById(`m${i}_${j}`).value=mat[i][j];
+  }
+}
+function clearAll(){buildMat();document.getElementById('stepsArea').style.display='none';}
+
+// ── Row REF ──
+function rowREF(mat,rows,cols){
+  const steps=[];let A=cl(mat);
+  steps.push({label:'원래 행렬 A',matrix:cl(A),hl:{}});
+  let pR=0,pivotCols=[];
+  for(let col=0;col<cols&&pR<rows;col++){
+    let fd=-1;for(let i=pR;i<rows;i++)if(Math.abs(A[i][col])>1e-12){fd=i;break;}
+    if(fd===-1)continue;
+    if(fd!==pR){[A[pR],A[fd]]=[A[fd],A[pR]];steps.push({label:`R${pR+1} ↔ R${fd+1}`,matrix:cl(A),hl:{swap:[pR,fd]}});}
+    const pv=A[pR][col];
+    if(Math.abs(pv-1)>1e-12){for(let j=0;j<cols;j++)A[pR][j]=cln(A[pR][j]/pv);steps.push({label:`R${pR+1} ← (1/${fr(pv)})·R${pR+1}`,matrix:cl(A),hl:{changed:pR,pivot:[pR,col]}});}
+    for(let i=pR+1;i<rows;i++){
+      if(Math.abs(A[i][col])<1e-12)continue;
+      const f=A[i][col];for(let j=0;j<cols;j++)A[i][j]=cln(A[i][j]-f*A[pR][j]);
+      steps.push({label:`R${i+1} ← R${i+1} − (${fr(f)})·R${pR+1}`,matrix:cl(A),hl:{changed:i,src:pR}});
+    }
+    pivotCols.push(col);pR++;
+  }
+  return {ref:A,steps,pivotCols,rank:pivotCols.length};
+}
+
+// ── Column REF (직접 열연산) ──
+function colREF(mat,rows,cols){
+  const steps=[];let A=cl(mat);
+  steps.push({label:'원래 행렬 A',matrix:cl(A),hl:{}});
+  let pC=0,pivotRows=[];
+  for(let row=0;row<rows&&pC<cols;row++){
+    // Find nonzero in this row at or right of pC
+    let fd=-1;for(let j=pC;j<cols;j++)if(Math.abs(A[row][j])>1e-12){fd=j;break;}
+    if(fd===-1)continue;
+    if(fd!==pC){
+      // Swap columns fd and pC
+      for(let i=0;i<rows;i++){const tmp=A[i][pC];A[i][pC]=A[i][fd];A[i][fd]=tmp;}
+      steps.push({label:`C${pC+1} ↔ C${fd+1}`,matrix:cl(A),hl:{swapCol:[pC,fd]}});
+    }
+    const pv=A[row][pC];
+    if(Math.abs(pv-1)>1e-12){
+      for(let i=0;i<rows;i++)A[i][pC]=cln(A[i][pC]/pv);
+      steps.push({label:`C${pC+1} ← (1/${fr(pv)})·C${pC+1}`,matrix:cl(A),hl:{changedCol:pC}});
+    }
+    for(let j=pC+1;j<cols;j++){
+      if(Math.abs(A[row][j])<1e-12)continue;
+      const f=A[row][j];
+      for(let i=0;i<rows;i++)A[i][j]=cln(A[i][j]-f*A[i][pC]);
+      steps.push({label:`C${j+1} ← C${j+1} − (${fr(f)})·C${pC+1}`,matrix:cl(A),hl:{changedCol:j,srcCol:pC}});
+    }
+    pivotRows.push(row);pC++;
+  }
+  return {cref:A,steps,pivotRows,rank:pivotRows.length};
+}
+
+// ── Null space from REF (내부적으로 RREF 후 후진대입) ──
+function nullSpaceFromREF(ref,rows,cols,pivotCols){
+  let A=cl(ref);
+  // Back-eliminate to get RREF internally
+  for(let k=pivotCols.length-1;k>=0;k--){
+    const pc=pivotCols[k];
+    for(let i=k-1;i>=0;i--){
+      if(Math.abs(A[i][pc])<1e-12)continue;
+      const f=A[i][pc];for(let j=0;j<cols;j++)A[i][j]=cln(A[i][j]-f*A[k][j]);
+    }
+  }
+  const pivotSet=new Set(pivotCols);
+  const freeIdx=[];for(let j=0;j<cols;j++)if(!pivotSet.has(j))freeIdx.push(j);
+  const basis=[];
+  // For each free variable, build a basis vector
+  const params=freeIdx.map((_,k)=>k<3?['s','t','u'][k]:`t${k+1}`);
+  const derivation=[]; // detailed derivation per variable
+  for(let fi=0;fi<freeIdx.length;fi++){
+    const fj=freeIdx[fi];
+    const v=Array(cols).fill(0);
+    v[fj]=1;
+    for(let k=0;k<pivotCols.length;k++) v[pivotCols[k]]=cln(-A[k][fj]);
+    basis.push(v);
+  }
+  // Build parametric expressions for each variable
+  const paramExprs=[];
+  for(let j=0;j<cols;j++){
+    if(freeIdx.includes(j)){
+      // This is a free variable
+      const fi=freeIdx.indexOf(j);
+      paramExprs.push({varIdx:j,expr:params[fi],isFree:true});
+    } else {
+      // Pivot variable: express in terms of free vars
+      const k=pivotCols.indexOf(j);
+      let parts=[];
+      for(let fi=0;fi<freeIdx.length;fi++){
+        const coef=cln(-A[k][freeIdx[fi]]);
+        if(Math.abs(coef)<1e-12)continue;
+        parts.push({coef,param:params[fi]});
+      }
+      paramExprs.push({varIdx:j,parts,isFree:false});
+    }
+  }
+  return {basis,freeIdx,params,paramExprs};
+}
+
+// ── Main compute ──
+function compute(){
+  const A=readMat();
+  const rows=nR, cols=nC;
+  let html='';
+
+  // ═══ Step 1: 행연산 → REF ═══
+  const {ref,steps:rSteps,pivotCols,rank}=rowREF(A,rows,cols);
+
+  html+='<div class="step-section">';
+  html+='<div class="step-section-title" style="color:var(--accent);">Step 1. 행연산으로 REF를 구한다.</div>';
+  html+=`<button class="toggle-btn" onclick="tog(\'rs\')">▸ 행연산 과정 보기 (${rSteps.length}단계)</button>`;
+  html+=`<div id="rs" style="display:none;margin-top:8px;">`;
+  for(const s of rSteps){
+    html+='<div class="op-line"><span class="formula">'+s.label+'</span></div>';
+    html+='<div style="margin:4px 0 10px;">'+renderMat(s.matrix,rows,cols,s.hl)+'</div>';
+  }
+  html+='</div>';
+  html+='<div style="margin-top:10px;font-size:0.85em;">REF:</div>';
+  html+='<div style="margin:4px 0;">'+renderMat(ref,rows,cols,{})+'</div>';
+  html+=`<div style="font-family:'IBM Plex Mono',monospace;font-size:0.88em;margin-top:8px;">rank(A) = <span style="color:var(--accent);font-weight:700;">${rank}</span></div>`;
+  html+='</div>';
+
+  // ═══ Step 2: 행공간 (행벡터) ═══
+  html+='<div class="step-section">';
+  html+='<div class="step-section-title" style="color:var(--accent);">Step 2. 행공간 Row(A)</div>';
+  html+='<div class="step-desc">REF에서 영이 아닌 행들이 행공간의 기저입니다.</div>';
+  const rowBasis=[];
+  for(let i=0;i<rank;i++) rowBasis.push(ref[i].slice(0,cols));
+  html+=buildRowSpanBox(rowBasis,rank);
+  html+='</div>';
+
+  // ═══ Step 3: 영공간 (상세) ═══
+  const {basis:nullBasis,freeIdx,params,paramExprs}=nullSpaceFromREF(ref,rows,cols,pivotCols);
+  const nullity=nullBasis.length;
+
+  html+='<div class="step-section">';
+  html+='<div class="step-section-title" style="color:var(--purple);">Step 3. 영공간 Null(A)</div>';
+  html+='<div class="step-desc">Ax = 0 을 REF에서 후진 대입으로 풀어 영공간의 기저를 구합니다.</div>';
+
+  if(nullity===0){
+    html+='<div class="span-box null-space"><h3>Null(A) <span class="dim-tag">dim = 0</span></h3>';
+    html+='<div class="span-row"><span style="color:var(--text-dim);">= { <strong>0</strong> }</span></div></div>';
+  } else {
+    // Show free variables
+    html+=`<div style="font-family:'IBM Plex Mono',monospace;font-size:0.82em;color:var(--text-dim);margin-bottom:6px;">자유변수: <span style="color:var(--purple);font-weight:600;">x<sub>${freeIdx.map(i=>i+1).join('</sub>, x<sub>')}</sub></span></div>`;
+
+    // Detailed derivation
+    html+='<div class="null-deriv">';
+    html+='<div style="color:var(--text);font-weight:600;margin-bottom:6px;">Ax = 0 에서 후진 대입:</div>';
+
+    // Free variables
+    for(let fi=0;fi<freeIdx.length;fi++){
+      html+=`<div><span class="var-name">x<sub>${freeIdx[fi]+1}</sub></span> = <span class="free-var">${params[fi]}</span> (자유)</div>`;
+    }
+
+    // Pivot variables (from bottom to top)
+    for(let k=pivotCols.length-1;k>=0;k--){
+      const pc=pivotCols[k];
+      const pe=paramExprs.find(p=>p.varIdx===pc);
+      let expr='';
+      if(!pe.parts||pe.parts.length===0){
+        expr='0';
+      } else {
+        for(let p=0;p<pe.parts.length;p++){
+          const {coef,param}=pe.parts[p];
+          if(p===0){
+            if(coef<0) expr+='−';
+            const ac=Math.abs(coef);
+            expr+=(Math.abs(ac-1)<1e-12)?param:`${fr(ac)}${param}`;
+          } else {
+            expr+=coef>0?' + ':' − ';
+            const ac=Math.abs(coef);
+            expr+=(Math.abs(ac-1)<1e-12)?param:`${fr(ac)}${param}`;
+          }
+        }
+      }
+      html+=`<div><span class="var-name">x<sub>${pc+1}</sub></span> = ${expr}</div>`;
+    }
+    html+='</div>';
+
+    // Parametric form → span
+    html+='<div style="font-size:0.82em;color:var(--text-dim);margin:8px 0 4px;">각 자유변수에 대응하는 기저벡터:</div>';
+    html+=buildColSpanBox('null-space','Null(A)',nullBasis,cols,nullity,'var(--purple)');
+  }
+  html+='</div>';
+
+  // ═══ Step 4: 열공간 (열연산) ═══
+  const colRes=colREF(A,rows,cols);
+
+  html+='<div class="step-section">';
+  html+='<div class="step-section-title" style="color:var(--accent3);">Step 4. 열연산으로 열공간 Col(A)를 구한다.</div>';
+  html+='<div class="step-desc">행렬 A에 열연산을 수행하여 열사다리꼴을 구하고, 영이 아닌 열들이 열공간의 기저입니다.</div>';
+
+  html+=`<button class="toggle-btn" onclick="tog(\'cs\')">▸ 열연산 과정 보기 (${colRes.steps.length}단계)</button>`;
+  html+=`<div id="cs" style="display:none;margin-top:8px;">`;
+  for(const s of colRes.steps){
+    html+='<div class="op-line"><span class="formula">'+s.label+'</span></div>';
+    html+='<div style="margin:4px 0 10px;">'+renderMat(s.matrix,rows,cols,s.hl)+'</div>';
+  }
+  html+='</div>';
+
+  html+='<div style="margin-top:10px;font-size:0.85em;">열사다리꼴:</div>';
+  html+='<div style="margin:4px 0;">'+renderMat(colRes.cref,rows,cols,{})+'</div>';
+
+  // Extract nonzero columns
+  const colBasis=[];
+  for(let j=0;j<colRes.rank;j++){
+    const v=[];for(let i=0;i<rows;i++)v.push(colRes.cref[i][j]);
+    colBasis.push(v);
+  }
+
+  html+=buildColSpanBox('col-space','Col(A)',colBasis,rows,colRes.rank,'var(--accent3)');
+  html+='</div>';
+
+  document.getElementById('stepsContent').innerHTML=html;
+  document.getElementById('stepsArea').style.display='block';
+  document.getElementById('stepsArea').scrollIntoView({behavior:'smooth'});
+}
+
+// ── Render helpers ──
+function renderMat(mat,rows,cols,hl){
+  let h='<span class="dmat"><span class="bk">[</span><table>';
+  for(let i=0;i<rows;i++){
+    h+='<tr>';
+    for(let j=0;j<cols;j++){
+      let c='';
+      if(hl.pivot&&hl.pivot[0]===i&&hl.pivot[1]===j) c='hl-pivot';
+      else if(hl.changed===i) c='hl-changed';
+      else if(hl.src===i) c='hl-row';
+      if(hl.swap&&hl.swap.includes(i)) c='hl-row';
+      // column highlights
+      if(hl.changedCol===j) c='hl-changed';
+      else if(hl.srcCol===j) c='hl-row';
+      if(hl.swapCol&&hl.swapCol.includes(j)) c='hl-row';
+      if(!c&&Math.abs(mat[i][j])<1e-12) c='hl-zero';
+      h+=`<td class="${c}">${fr(mat[i][j])}</td>`;
+    }
+    h+='</tr>';
+  }
+  h+='</table><span class="bk">]</span></span>';
+  return h;
+}
+
+function buildRowSpanBox(basis,dim){
+  let h='<div class="span-box row-space">';
+  h+=`<h3>Row(A) <span class="dim-tag">dim = ${dim}</span></h3>`;
+  if(basis.length===0){
+    h+='<div class="span-row"><span style="color:var(--text-dim);">= { <strong>0</strong> }</span></div>';
+  } else {
+    h+='<div class="span-row"><span>= span {</span>';
+    for(let k=0;k<basis.length;k++){
+      if(k>0) h+='<span style="color:var(--text-dim);margin:0 3px;">,</span>';
+      h+=renderRowVec(basis[k],'var(--accent)');
+    }
+    h+='<span>}</span></div>';
+  }
+  h+='</div>';return h;
+}
+
+function buildColSpanBox(cls,label,basis,vecLen,dim,color){
+  let h=`<div class="span-box ${cls}">`;
+  h+=`<h3>${label} <span class="dim-tag">dim = ${dim}</span></h3>`;
+  if(basis.length===0){
+    h+='<div class="span-row"><span style="color:var(--text-dim);">= { <strong>0</strong> }</span></div>';
+  } else {
+    h+='<div class="span-row"><span>= span {</span>';
+    for(let k=0;k<basis.length;k++){
+      if(k>0) h+='<span style="color:var(--text-dim);margin:0 3px;">,</span>';
+      h+=renderColVec(basis[k],color);
+    }
+    h+='<span>}</span></div>';
+  }
+  h+='</div>';return h;
+}
+
+function renderRowVec(vec,color){
+  let h=`<span style="font-family:'IBM Plex Mono',monospace;font-size:0.88em;color:${color};">(`;
+  for(let i=0;i<vec.length;i++){if(i>0)h+=',&nbsp;';h+=fr(vec[i]);}
+  h+=')</span>';return h;
+}
+
+function renderColVec(vec,color){
+  let h=`<div class="col-vec" style="border-left:2px solid ${color};border-right:2px solid ${color};">`;
+  for(const v of vec) h+=`<div style="color:${color};">${fr(v)}</div>`;
+  h+='</div>';return h;
+}
+
+function tog(id){
+  const el=document.getElementById(id);
+  const btn=el.previousElementSibling;
+  if(el.style.display==='none'){
+    el.style.display='block';
+    btn.textContent=btn.textContent.replace('▸','▾').replace('보기','접기');
+  } else {
+    el.style.display='none';
+    btn.textContent=btn.textContent.replace('▾','▸').replace('접기','보기');
+  }
+}
+
+buildMat();
+</script>
+<script data-goatcounter="https://takwon-sungshin.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

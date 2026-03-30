@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gaussian Elimination Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2129;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --accent: #58a6ff;
+  --accent2: #3fb950;
+  --accent3: #f0883e;
+  --red: #ff6b6b;
+  --yellow: #ffd43b;
+  --purple: #bc8cff;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'IBM Plex Sans', 'Noto Sans KR', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+.container { max-width:1200px; margin:0 auto; padding:24px 20px; }
+header {
+  text-align:center; margin-bottom:32px; padding:32px 0 24px;
+  border-bottom:1px solid var(--border);
+}
+header h1 { font-size:1.8em; font-weight:700; letter-spacing:-0.5px; margin-bottom:8px; }
+header h1 span { color:var(--accent); }
+header p { color:var(--text-dim); font-size:0.95em; max-width:750px; margin:0 auto; font-weight:300; }
+
+.grid {
+  display:grid; grid-template-columns:340px 1fr;
+  gap:24px; align-items:start;
+}
+@media (max-width:960px) { .grid { grid-template-columns:1fr; } }
+
+.panel {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:20px; box-shadow:var(--shadow);
+}
+.panel-title {
+  font-size:0.78em; font-weight:600; text-transform:uppercase;
+  letter-spacing:1px; color:var(--text-dim); margin-bottom:16px;
+  display:flex; align-items:center; gap:8px;
+}
+.panel-title::before {
+  content:''; width:3px; height:14px;
+  background:var(--accent); border-radius:2px;
+}
+
+.btn {
+  padding:8px 16px; border-radius:6px; border:1px solid var(--border);
+  background:var(--surface2); color:var(--text); font-family:inherit;
+  font-size:0.85em; font-weight:500; cursor:pointer; transition:all 0.15s;
+}
+.btn:hover { background:var(--border); }
+.btn.primary { background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600; }
+.btn.primary:hover { opacity:0.85; }
+.btn.danger { border-color:var(--red); color:var(--red); }
+.btn.danger:hover { background:rgba(255,107,107,0.12); }
+
+/* Size inputs */
+.size-row {
+  display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  font-family:'IBM Plex Mono', monospace; font-size:0.85em;
+}
+.size-row label { color:var(--text-dim); }
+.size-row input {
+  width:52px; background:var(--bg); border:1px solid var(--border);
+  border-radius:5px; color:var(--text); padding:5px 6px; text-align:center;
+  font-family:inherit; font-size:inherit;
+}
+.size-row input:focus { outline:none; border-color:var(--accent); }
+
+/* Mode toggle */
+.mode-tabs { display:flex; gap:4px; margin-bottom:14px; }
+.mode-tab {
+  padding:6px 14px; border-radius:5px; background:transparent;
+  border:1px solid var(--border); color:var(--text-dim);
+  font-size:0.78em; font-weight:500; cursor:pointer;
+  font-family:inherit; transition:all 0.15s;
+}
+.mode-tab.active { background:var(--accent); color:var(--bg); border-color:var(--accent); }
+
+/* Matrix input grid */
+.matrix-wrap {
+  display:flex; align-items:center; justify-content:center;
+  gap:6px; margin:12px 0; overflow-x:auto; padding:4px 0;
+}
+.matrix-bracket {
+  font-size:3rem; font-weight:100; color:var(--accent);
+  font-family:'IBM Plex Mono', monospace; user-select:none; line-height:1;
+}
+.mat-grid { display:inline-grid; gap:5px; }
+.mat-grid input {
+  width:58px; height:38px; background:var(--bg); border:1px solid var(--border);
+  border-radius:5px; color:var(--text); font-family:'IBM Plex Mono', monospace;
+  font-size:0.9em; text-align:center; outline:none; transition:border-color 0.15s;
+}
+.mat-grid input:focus { border-color:var(--accent); }
+.mat-grid input.aug { border-color:var(--purple); }
+.aug-div {
+  width:2px; background:var(--purple); border-radius:2px;
+  align-self:stretch; opacity:0.5;
+}
+
+/* Equation textarea */
+.eq-area { display:none; }
+.eq-area textarea {
+  width:100%; min-height:90px; background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--radius); color:var(--text); font-family:'IBM Plex Mono', monospace;
+  font-size:0.88em; padding:12px; resize:vertical; outline:none; line-height:1.8;
+}
+.eq-area textarea:focus { border-color:var(--accent); }
+.eq-area .hint { color:var(--text-dim); font-size:0.72em; margin-top:6px; }
+
+.controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+.rand-group {
+  display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;
+  padding-top:10px; border-top:1px solid var(--border);
+}
+.rand-label { font-size:0.72em; color:var(--text-dim); width:100%; margin-bottom:2px; }
+.dot {
+  display:inline-block; width:7px; height:7px;
+  border-radius:50%; margin-right:4px; vertical-align:middle;
+}
+
+/* ── Steps ── */
+.steps-area { display:none; }
+.progress-track {
+  width:100%; height:4px; background:var(--border);
+  border-radius:2px; margin-bottom:14px; overflow:hidden;
+}
+.progress-fill {
+  height:100%; background:var(--accent); border-radius:2px;
+  transition:width 0.3s ease;
+}
+.playback {
+  display:flex; align-items:center; justify-content:center;
+  gap:6px; margin-bottom:14px;
+}
+.playback button {
+  background:var(--surface2); border:1px solid var(--border); color:var(--text);
+  width:34px; height:34px; border-radius:6px; cursor:pointer; font-size:0.9em;
+  display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+}
+.playback button:hover { border-color:var(--accent); color:var(--accent); }
+.playback button.playing { background:var(--accent); color:var(--bg); border-color:var(--accent); }
+.speed-lbl {
+  font-family:'IBM Plex Mono', monospace; font-size:0.72em; color:var(--text-dim);
+  margin-left:6px;
+}
+.step-counter {
+  font-family:'IBM Plex Mono', monospace; font-size:0.82em;
+  color:var(--accent); text-align:center; margin-bottom:10px;
+}
+
+.step-card {
+  background:var(--bg); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px; margin-bottom:10px;
+  animation:fadeUp 0.3s ease;
+}
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.step-label {
+  display:inline-block; font-family:'IBM Plex Mono', monospace;
+  font-size:0.7em; font-weight:600; padding:3px 8px;
+  border-radius:4px; margin-bottom:10px;
+}
+.step-label.op { background:rgba(88,166,255,0.15); color:var(--accent); }
+.step-label.result { background:rgba(63,185,80,0.15); color:var(--accent2); }
+.step-label.initial { background:rgba(240,136,62,0.15); color:var(--accent3); }
+
+.step-desc {
+  font-size:0.9em; color:var(--text); margin-bottom:12px; line-height:1.6;
+}
+.step-desc .formula {
+  font-family:'IBM Plex Mono', monospace; color:var(--accent3); font-weight:500;
+}
+
+/* Matrix display */
+.mat-display {
+  display:flex; justify-content:center; align-items:center;
+  gap:4px; margin:8px 0; overflow-x:auto; padding:4px 0;
+}
+.mat-display .bk {
+  font-size:3rem; font-weight:100; color:var(--accent);
+  font-family:'IBM Plex Mono', monospace; user-select:none; line-height:1;
+}
+.mat-table { border-collapse:separate; border-spacing:2px; }
+.mat-table td {
+  font-family:'IBM Plex Mono', monospace; font-size:0.9em; font-weight:500;
+  padding:4px 8px; text-align:right; border-radius:4px; min-width:44px;
+  transition:all 0.2s;
+}
+.mat-table td.hl-row { background:rgba(88,166,255,0.1); color:var(--accent); }
+.mat-table td.hl-pivot { background:rgba(255,212,59,0.18); color:var(--yellow); font-weight:700; box-shadow:0 0 0 2px var(--yellow); }
+.mat-table td.hl-changed { background:rgba(63,185,80,0.12); color:var(--accent2); }
+.mat-table td.aug-col { border-left:2px solid rgba(188,140,255,0.4); }
+
+/* Solution boxes */
+.sol-box {
+  background:rgba(63,185,80,0.06); border:1px solid rgba(63,185,80,0.25);
+  border-radius:var(--radius); padding:14px 16px; margin-top:10px;
+}
+.sol-box h3 {
+  font-family:'IBM Plex Mono', monospace; font-size:0.8em;
+  color:var(--accent2); margin-bottom:8px;
+}
+.sol-box .sol-item {
+  font-family:'IBM Plex Mono', monospace; font-size:0.95em;
+  padding:2px 0;
+}
+.sol-box .sol-item span { color:var(--yellow); font-weight:600; }
+
+.sol-box.warn { border-color:rgba(255,212,59,0.35); background:rgba(255,212,59,0.05); }
+.sol-box.warn h3 { color:var(--yellow); }
+.sol-box.err { border-color:rgba(255,107,107,0.35); background:rgba(255,107,107,0.04); }
+.sol-box.err h3 { color:var(--red); }
+
+.backsub { margin-top:10px; }
+.backsub-hd { font-size:0.75em; color:var(--text-dim); font-weight:600; margin-bottom:6px; }
+.backsub-step {
+  font-family:'IBM Plex Mono', monospace; font-size:0.85em;
+  color:var(--text-dim); padding:2px 0; line-height:1.6;
+}
+.backsub-step .val { color:var(--accent2); font-weight:600; }
+.backsub-step .vn { color:var(--yellow); font-weight:600; }
+
+/* Span vector */
+.col-vec {
+  display:inline-flex; flex-direction:column; align-items:center;
+  padding:3px 7px; border-radius:3px; margin:0 2px;
+}
+.col-vec div { font-size:0.85em; line-height:1.5; }
+
+@media (max-width:960px) {
+  header h1 { font-size:1.4em; }
+  .mat-grid input { width:48px; height:34px; font-size:0.8em; }
+  .mat-table td { font-size:0.8em; padding:3px 5px; min-width:36px; }
+  .matrix-bracket, .mat-display .bk { font-size:2.2rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Gaussian <span>Elimination</span> Visualizer (가우스 소거법)</h1>
+    <p>연립방정식 또는 첨가행렬을 입력하면 가우스 소거법 과정을 단계별로 보여줍니다.</p>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <div class="panel">
+        <div class="panel-title">Matrix Size (행렬 크기)</div>
+        <div class="size-row">
+          <label>행:</label>
+          <input type="number" id="rowIn" value="3" min="1" max="8">
+          <label>열 (변수):</label>
+          <input type="number" id="colIn" value="3" min="1" max="8">
+          <button class="btn" onclick="applySize()">적용</button>
+        </div>
+        <div class="mode-tabs">
+          <button class="mode-tab active" onclick="setMode('matrix',this)">행렬 입력</button>
+          <button class="mode-tab" onclick="setMode('equation',this)">연립방정식</button>
+        </div>
+        <div id="matArea">
+          <div class="matrix-wrap" id="matWrap"></div>
+        </div>
+        <div class="eq-area" id="eqArea">
+          <textarea id="eqText" placeholder="예시:&#10;2x + 3y - z = 5&#10;x - y + 2z = 3&#10;3x + 2y + z = 8"></textarea>
+          <div class="hint">변수명은 자유롭게 쓸 수 있습니다. 계수를 생략하면 1로 간주합니다.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Controls (실행)</div>
+        <div class="controls">
+          <button class="btn primary" onclick="startElim()" style="flex:1;">▶ 소거법 실행</button>
+          <button class="btn danger" onclick="clearAll()">초기화</button>
+        </div>
+        <div class="rand-group">
+          <div class="rand-label">랜덤 예제 생성</div>
+          <button class="btn" onclick="genRandom('unique')" style="flex:1;"><span class="dot" style="background:var(--accent2)"></span>유일해</button>
+          <button class="btn" onclick="genRandom('infinite')" style="flex:1;"><span class="dot" style="background:var(--yellow)"></span>무수히 많은 해</button>
+          <button class="btn" onclick="genRandom('none')" style="flex:1;"><span class="dot" style="background:var(--red)"></span>해 없음</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel steps-area" id="stepsArea">
+        <div class="panel-title">Step-by-Step (단계별 과정)</div>
+        <div class="progress-track"><div class="progress-fill" id="progBar"></div></div>
+        <div class="playback">
+          <button onclick="goFirst()" title="처음">⏮</button>
+          <button onclick="goPrev()" title="이전">◀</button>
+          <button id="playBtn" onclick="togglePlay()" title="재생">▶</button>
+          <button onclick="goNext()" title="다음">▶</button>
+          <button onclick="goLast()" title="끝">⏭</button>
+          <span class="speed-lbl" id="speedLbl">1×</span>
+          <button onclick="cycleSpeed()" title="속도" style="font-size:0.7em;">⚡</button>
+        </div>
+        <div class="step-counter" id="stepCtr"></div>
+        <div id="stepContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let mode='matrix',nR=3,nC=3,steps=[],cur=0;
+let playing=false,timer=null,spd=1500,spdI=0;
+const SPDS=[1500,1000,600,300],SLBL=['1×','1.5×','2.5×','5×'];
+
+function applySize(){
+  nR=Math.max(1,Math.min(8,parseInt(document.getElementById('rowIn').value)||3));
+  nC=Math.max(1,Math.min(8,parseInt(document.getElementById('colIn').value)||3));
+  document.getElementById('rowIn').value=nR;
+  document.getElementById('colIn').value=nC;
+  buildMat();
+}
+function setMode(m,el){
+  mode=m;
+  document.querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('matArea').style.display=m==='matrix'?'block':'none';
+  document.getElementById('eqArea').style.display=m==='equation'?'block':'none';
+}
+function buildMat(){
+  const w=document.getElementById('matWrap');
+  let h='<span class="matrix-bracket">[</span>';
+  h+=`<div class="mat-grid" style="grid-template-columns:repeat(${nC},1fr) 4px 1fr;">`;
+  for(let i=0;i<nR;i++){
+    for(let j=0;j<nC;j++) h+=`<input type="text" id="m${i}_${j}" inputmode="decimal">`;
+    h+='<div class="aug-div"></div>';
+    h+=`<input type="text" id="m${i}_${nC}" class="aug">`;
+  }
+  h+='</div><span class="matrix-bracket">]</span>';
+  w.innerHTML=h;
+}
+
+function parseEq(text){
+  const lines=text.trim().split('\n').filter(l=>l.trim());
+  if(!lines.length)return null;
+  const vs=new Set();
+  for(const l of lines){const m=l.match(/[a-zA-Z_]\w*/g);if(m)m.forEach(v=>vs.add(v));}
+  const vars=[...vs].sort((a,b)=>{const na=a.replace(/\D/g,''),nb=b.replace(/\D/g,'');if(na&&nb)return+na-+nb;return a<b?-1:1;});
+  const c=vars.length;if(!c)return null;
+  const mat=[];
+  for(const l of lines){
+    const[lhs,rhs]=l.split('=').map(s=>s.trim());if(rhs===undefined)return null;
+    const row=Array(c+1).fill(0);row[c]=parseFloat(rhs)||0;
+    const re=/([+-]?\s*\d*\.?\d*)\s*([a-zA-Z_]\w*)/g;let m;
+    while((m=re.exec(lhs))!==null){
+      let s=m[1].replace(/\s/g,''),co;
+      if(s===''||s==='+')co=1;else if(s==='-')co=-1;else co=parseFloat(s);
+      const i=vars.indexOf(m[2]);if(i>=0)row[i]=co;
+    }
+    mat.push(row);
+  }
+  return{matrix:mat,vars,nR:lines.length,nC:c};
+}
+function readMat(){
+  const mat=[];
+  for(let i=0;i<nR;i++){const row=[];for(let j=0;j<=nC;j++){const v=parseFloat(document.getElementById(`m${i}_${j}`).value);row.push(isNaN(v)?0:v);}mat.push(row);}
+  return mat;
+}
+
+function fr(num){
+  if(Math.abs(num-Math.round(num))<1e-9)return''+Math.round(num);
+  for(let d=1;d<=1000;d++){const n=num*d;if(Math.abs(n-Math.round(n))<1e-9){const nn=Math.round(n),g=gcd(Math.abs(nn),d),t=nn/g,b=d/g;return b===1?''+t:`${t}/${b}`;}}
+  return num.toFixed(4);
+}
+function gcd(a,b){return b?gcd(b,a%b):a;}
+function cl(m){return m.map(r=>[...r]);}
+function cln(v){return Math.abs(v)<1e-12?0:v;}
+
+// Random
+function rI(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function genRandom(type){
+  setMode('matrix',document.querySelectorAll('.mode-tab')[0]);
+  let mat;
+  if(type==='unique')mat=genU();else if(type==='infinite')mat=genInf();else mat=genN();
+  nR=mat.length;nC=mat[0].length-1;
+  document.getElementById('rowIn').value=nR;document.getElementById('colIn').value=nC;
+  buildMat();
+  for(let i=0;i<nR;i++)for(let j=0;j<=nC;j++)document.getElementById(`m${i}_${j}`).value=mat[i][j];
+}
+function genU(){
+  const rows=Math.max(nR,nC),cols=nC,sol=[];
+  for(let i=0;i<cols;i++)sol.push(rI(-3,3));
+  const mat=[];
+  for(let i=0;i<cols;i++){const row=[];for(let j=0;j<cols;j++)row.push(rI(-3,3));let rhs=0;for(let j=0;j<cols;j++)rhs+=row[j]*sol[j];row.push(rhs);mat.push(row);}
+  if(Math.abs(det(mat.map(r=>r.slice(0,cols))))<0.5)return genU();
+  for(let i=cols;i<rows;i++){const co=[];for(let k=0;k<cols;k++)co.push(rI(-2,2));const row=Array(cols+1).fill(0);for(let j=0;j<=cols;j++)for(let k=0;k<cols;k++)row[j]+=co[k]*mat[k][j];mat.push(row);}
+  for(let i=mat.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[mat[i],mat[j]]=[mat[j],mat[i]];}
+  nR=rows;nC=cols;return mat;
+}
+function det(M){
+  const s=M.length;if(s===1)return M[0][0];if(s===2)return M[0][0]*M[1][1]-M[0][1]*M[1][0];
+  let d=0;for(let j=0;j<s;j++){const sub=[];for(let i=1;i<s;i++){const row=[];for(let k=0;k<s;k++)if(k!==j)row.push(M[i][k]);sub.push(row);}d+=((j%2===0)?1:-1)*M[0][j]*det(sub);}return d;
+}
+function genInf(){
+  const r=nR,c=nC,ind=Math.max(1,Math.min(r,c)-1),mat=[];
+  for(let i=0;i<ind;i++){const row=[];for(let j=0;j<=c;j++)row.push(rI(-3,3));mat.push(row);}
+  for(let i=ind;i<r;i++){const co=[];for(let k=0;k<ind;k++)co.push(rI(-2,2));const row=Array(c+1).fill(0);for(let j=0;j<=c;j++)for(let k=0;k<ind;k++)row[j]+=co[k]*mat[k][j];mat.push(row);}
+  for(let i=r-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[mat[i],mat[j]]=[mat[j],mat[i]];}
+  return mat;
+}
+function genN(){
+  const r=nR,c=nC,ind=Math.max(1,Math.min(r,c)-1),mat=[];
+  for(let i=0;i<ind;i++){const row=[];for(let j=0;j<=c;j++)row.push(rI(-3,3));mat.push(row);}
+  for(let i=ind;i<r;i++){const co=[];for(let k=0;k<ind;k++)co.push(rI(-2,2));const row=Array(c+1).fill(0);for(let j=0;j<c;j++)for(let k=0;k<ind;k++)row[j]+=co[k]*mat[k][j];let cr=0;for(let k=0;k<ind;k++)cr+=co[k]*mat[k][c];row[c]=cr+rI(1,5)*(Math.random()<0.5?1:-1);mat.push(row);}
+  for(let i=r-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[mat[i],mat[j]]=[mat[j],mat[i]];}
+  return mat;
+}
+
+// Gaussian Elimination
+function gaussElim(mat,rows,cols,vn){
+  steps=[];let A=cl(mat);
+  steps.push({type:'initial',label:'초기 첨가행렬',desc:`입력된 ${rows}×${cols+1} 첨가행렬 <span class="formula">[A|b]</span>`,matrix:cl(A),hl:{},cols});
+  let pR=0,pCs=[];
+  for(let col=0;col<cols&&pR<rows;col++){
+    let fd=-1;for(let i=pR;i<rows;i++)if(Math.abs(A[i][col])>1e-12){fd=i;break;}
+    if(fd===-1)continue;
+    if(fd!==pR){
+      [A[pR],A[fd]]=[A[fd],A[pR]];
+      steps.push({type:'op',label:'행 교환',desc:`${pR+1}행의 ${col+1}열이 0이므로 <span class="formula">R${pR+1} ↔ R${fd+1}</span>`,matrix:cl(A),hl:{swap:[pR,fd]},cols});
+    }
+    const pv=A[pR][col];
+    if(Math.abs(pv-1)>1e-12){
+      for(let j=0;j<=cols;j++)A[pR][j]=cln(A[pR][j]/pv);
+      steps.push({type:'op',label:'피벗 → 1',desc:`<span class="formula">R${pR+1} ← (1/${fr(pv)}) · R${pR+1}</span>  →  피벗을 1로 만듭니다.`,matrix:cl(A),hl:{changed:pR,pivot:[pR,col]},cols});
+    } else {
+      steps.push({type:'op',label:`피벗 확인 (${col+1}열)`,desc:`<span class="formula">a<sub>${pR+1},${col+1}</sub> = 1</span> — 이미 1입니다.`,matrix:cl(A),hl:{pivot:[pR,col]},cols});
+    }
+    for(let i=pR+1;i<rows;i++){
+      if(Math.abs(A[i][col])<1e-12)continue;
+      const f=A[i][col];
+      for(let j=0;j<=cols;j++)A[i][j]=cln(A[i][j]-f*A[pR][j]);
+      steps.push({type:'op',label:'전진 소거',desc:`<span class="formula">R${i+1} ← R${i+1} − (${fr(f)}) · R${pR+1}</span>`,matrix:cl(A),hl:{pivot:[pR,col],src:pR,changed:i},cols});
+    }
+    pCs.push(col);pR++;
+  }
+  const rank=pCs.length;
+  let incon=false;
+  for(let i=0;i<rows;i++){let z=true;for(let j=0;j<cols;j++)if(Math.abs(A[i][j])>1e-12){z=false;break;}if(z&&Math.abs(A[i][cols])>1e-12){incon=true;break;}}
+  let extra='';
+  if(incon){
+    extra='<div class="sol-box err"><h3>✗ 해 없음 (No Solution)</h3><div class="sol-item" style="font-size:0.82em;color:var(--text-dim);">0 = (0이 아닌 수) 형태의 모순이 발생합니다.</div></div>';
+  } else if(rank<cols){
+    extra=buildInfSol(A,rows,cols,rank,pCs,vn);
+  } else {
+    const x=Array(cols).fill(0);
+    let bs='<div class="backsub"><div class="backsub-hd">후진 대입 (Back Substitution):</div>';
+    for(let i=rank-1;i>=0;i--){
+      const pc=pCs[i];let s=A[i][cols],expr=fr(A[i][cols]),has=false;
+      for(let j=pc+1;j<cols;j++){if(Math.abs(A[i][j])>1e-12){has=true;expr+=` − (${fr(A[i][j])})(${fr(x[j])})`;s-=A[i][j]*x[j];}}
+      x[pc]=cln(s);
+      bs+=has?`<div class="backsub-step"><span class="vn">${vn[pc]}</span> = ${expr} = <span class="val">${fr(x[pc])}</span></div>`:`<div class="backsub-step"><span class="vn">${vn[pc]}</span> = <span class="val">${fr(x[pc])}</span></div>`;
+    }
+    bs+='</div>';
+    let sol='<div class="sol-box"><h3>✦ 유일한 해 (Unique Solution)</h3>';
+    for(let i=0;i<cols;i++)sol+=`<div class="sol-item"><span>${vn[i]}</span> = ${fr(x[i])}</div>`;
+    sol+='</div>';
+    extra=sol+bs;
+  }
+  let desc;
+  if(incon)desc='행사다리꼴(REF) 완성. 모순 행이 존재하여 <strong>해가 없습니다</strong>.';
+  else if(rank<cols)desc='행사다리꼴(REF) 완성. 자유변수가 존재하여 <strong>해가 무수히 많습니다</strong>.';
+  else desc='행사다리꼴(REF) 완성. 후진 대입으로 <strong>유일한 해</strong>를 구합니다.';
+  steps.push({type:'result',label:'행사다리꼴 (REF)',desc,matrix:cl(A),hl:{},extra,cols});
+}
+
+function buildInfSol(refA,rows,cols,rank,pCs,vn){
+  let A=cl(refA);
+  for(let k=rank-1;k>=0;k--){const pc=pCs[k];for(let i=k-1;i>=0;i--){if(Math.abs(A[i][pc])<1e-12)continue;const f=A[i][pc];for(let j=0;j<=cols;j++)A[i][j]=cln(A[i][j]-f*A[k][j]);}}
+  const pSet=new Set(pCs),freeI=[];
+  for(let j=0;j<cols;j++)if(!pSet.has(j))freeI.push(j);
+  const xp=Array(cols).fill(0);
+  for(let k=0;k<rank;k++)xp[pCs[k]]=cln(A[k][cols]);
+  const bv=[];
+  for(const fi of freeI){const v=Array(cols).fill(0);v[fi]=1;for(let k=0;k<rank;k++)v[pCs[k]]=cln(-A[k][fi]);bv.push(v);}
+  const isHomo=xp.every(v=>Math.abs(v)<1e-12);
+
+  let h='<div class="sol-box warn"><h3>⚠ 무수히 많은 해 (Infinitely Many Solutions)</h3>';
+  h+=`<div style="font-size:0.78em;color:var(--text-dim);margin-bottom:8px;">자유변수: <span style="color:var(--yellow);font-weight:600;">${freeI.map(i=>vn[i]).join(', ')}</span> (rank = ${rank}, 변수 ${cols}개)</div>`;
+
+  if(isHomo){
+    h+='<div style="font-family:IBM Plex Mono,monospace;font-size:0.9em;line-height:1.8;margin-top:6px;">';
+    h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+    h+='<span>해공간 = span</span><span style="color:var(--accent);">{</span>';
+    for(let k=0;k<bv.length;k++){
+      if(k>0)h+='<span style="color:var(--text-dim);margin:0 3px;">,</span>';
+      h+=renderCV(bv[k],'var(--purple)');
+    }
+    h+='<span style="color:var(--accent);">}</span></div></div>';
+  }
+
+  // 매개변수 표현 (항상)
+  h+=`<div style="margin-top:10px;${isHomo?'padding-top:8px;border-top:1px solid var(--border);':''}">`;
+  h+='<div style="font-size:0.72em;color:var(--text-dim);font-weight:600;margin-bottom:4px;">매개변수 표현:</div>';
+  const pm=freeI.map((_,k)=>k<3?['s','t','u'][k]:`t${k+1}`);
+  for(let i=0;i<cols;i++){
+    let expr='';
+    if(Math.abs(xp[i])>1e-12)expr+=fr(xp[i]);
+    for(let k=0;k<bv.length;k++){
+      const c=bv[k][i];if(Math.abs(c)<1e-12)continue;
+      if(expr){expr+=c>0?' + ':' − ';const ac=Math.abs(c);expr+=(Math.abs(ac-1)<1e-12)?pm[k]:`${fr(ac)}${pm[k]}`;}
+      else{if(c<0)expr+='−';const ac=Math.abs(c);expr+=(Math.abs(ac-1)<1e-12)?pm[k]:`${fr(ac)}${pm[k]}`;}
+    }
+    if(!expr)expr='0';
+    h+=`<div style="font-family:IBM Plex Mono,monospace;font-size:0.85em;padding:1px 0;"><span style="color:var(--yellow);font-weight:600;">${vn[i]}</span> = ${expr}</div>`;
+  }
+  h+=`<div style="font-size:0.72em;color:var(--text-dim);margin-top:4px;">(${pm.join(', ')} ∈ ℝ)</div></div></div>`;
+  return h;
+}
+function renderCV(vec,color){
+  let h=`<div class="col-vec" style="border-left:2px solid ${color};border-right:2px solid ${color};">`;
+  for(const v of vec)h+=`<div style="color:${color};">${fr(v)}</div>`;
+  return h+'</div>';
+}
+
+function startElim(){
+  let mat,rows,cols,vn;
+  if(mode==='equation'){
+    const p=parseEq(document.getElementById('eqText').value);
+    if(!p){alert('연립방정식을 올바르게 입력해 주세요.');return;}
+    mat=p.matrix;rows=p.nR;cols=p.nC;vn=p.vars;nR=rows;nC=cols;
+  } else {
+    rows=nR;cols=nC;mat=readMat();
+    vn=cols<=3?['x','y','z'].slice(0,cols):Array.from({length:cols},(_,i)=>`x${i+1}`);
+  }
+  gaussElim(mat,rows,cols,vn);cur=0;showStep();
+  document.getElementById('stepsArea').style.display='block';
+  document.getElementById('stepsArea').scrollIntoView({behavior:'smooth'});
+}
+
+function showStep(){
+  const s=steps[cur],tot=steps.length,rows=s.matrix.length,cols=s.cols;
+  document.getElementById('stepCtr').textContent=`${cur+1} / ${tot}`;
+  document.getElementById('progBar').style.width=`${((cur+1)/tot)*100}%`;
+  const lc=s.type==='initial'?'initial':s.type==='result'?'result':'op';
+  let h=`<div class="step-card"><span class="step-label ${lc}">${s.label}</span>`;
+  h+=`<div class="step-desc">${s.desc}</div>`;
+  h+=`<div class="mat-display"><span class="bk">[</span><table class="mat-table">`;
+  for(let i=0;i<rows;i++){
+    h+='<tr>';
+    for(let j=0;j<=cols;j++){
+      let c=[];if(j===cols)c.push('aug-col');
+      const hl=s.hl;
+      if(hl.pivot&&hl.pivot[0]===i&&hl.pivot[1]===j)c.push('hl-pivot');
+      else if(hl.changed===i)c.push('hl-changed');
+      else if(hl.src===i)c.push('hl-row');
+      if(hl.swap&&hl.swap.includes(i))c.push('hl-row');
+      h+=`<td class="${c.join(' ')}">${fr(s.matrix[i][j])}</td>`;
+    }
+    h+='</tr>';
+  }
+  h+='</table><span class="bk">]</span></div>';
+  if(s.extra)h+=s.extra;
+  h+='</div>';
+  document.getElementById('stepContent').innerHTML=h;
+}
+
+function goFirst(){stop();cur=0;showStep();}
+function goLast(){stop();cur=steps.length-1;showStep();}
+function goPrev(){stop();if(cur>0){cur--;showStep();}}
+function goNext(){if(cur<steps.length-1){cur++;showStep();}else stop();}
+function togglePlay(){
+  if(playing){stop();return;}
+  playing=true;document.getElementById('playBtn').classList.add('playing');
+  document.getElementById('playBtn').textContent='⏸';
+  timer=setInterval(()=>goNext(),spd);
+}
+function stop(){
+  playing=false;document.getElementById('playBtn').classList.remove('playing');
+  document.getElementById('playBtn').textContent='▶';clearInterval(timer);
+}
+function cycleSpeed(){
+  spdI=(spdI+1)%SPDS.length;spd=SPDS[spdI];
+  document.getElementById('speedLbl').textContent=SLBL[spdI];
+  if(playing){clearInterval(timer);timer=setInterval(()=>goNext(),spd);}
+}
+function clearAll(){
+  document.getElementById('stepsArea').style.display='none';stop();
+  if(mode==='matrix')buildMat();else document.getElementById('eqText').value='';
+}
+buildMat();
+</script>
+<script data-goatcounter="https://takwon-sungshin.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eigenvalues & Diagonalization</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--surface2:#1c2129;--border:#30363d;--text:#e6edf3;--text-dim:#8b949e;--accent:#58a6ff;--accent2:#3fb950;--accent3:#f0883e;--red:#ff6b6b;--yellow:#ffd43b;--purple:#bc8cff;--radius:10px;--shadow:0 2px 12px rgba(0,0,0,0.4);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'IBM Plex Sans','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6;}
+.container{max-width:1200px;margin:0 auto;padding:24px 20px;}
+header{text-align:center;margin-bottom:32px;padding:32px 0 24px;border-bottom:1px solid var(--border);}
+header h1{font-size:1.8em;font-weight:700;letter-spacing:-0.5px;margin-bottom:8px;}
+header h1 span{color:var(--accent);}
+header p{color:var(--text-dim);font-size:0.95em;max-width:800px;margin:0 auto;font-weight:300;}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start;}
+@media(max-width:960px){.grid{grid-template-columns:1fr;}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+.panel-title{font-size:0.78em;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.panel-title::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px;}
+.btn{padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:inherit;font-size:0.85em;font-weight:500;cursor:pointer;transition:all 0.15s;}
+.btn:hover{background:var(--border);}
+.btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600;}
+.btn.primary:hover{opacity:0.85;}
+.btn.danger{border-color:var(--red);color:var(--red);}
+.btn.danger:hover{background:rgba(255,107,107,0.12);}
+.size-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:0.85em;}
+.size-row label{color:var(--text-dim);}
+.size-row input[type=number]{width:52px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:5px 6px;text-align:center;font-family:inherit;font-size:inherit;}
+.size-row input:focus{outline:none;border-color:var(--accent);}
+.mat-wrap{display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 0;overflow-x:auto;padding:4px 0;}
+.mat-bk{font-size:3rem;font-weight:100;color:var(--accent);font-family:'IBM Plex Mono',monospace;user-select:none;line-height:1;}
+.mat-grid{display:inline-grid;gap:5px;}
+.mat-grid input{width:58px;height:38px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:0.9em;text-align:center;outline:none;}
+.mat-grid input:focus{border-color:var(--accent);}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.rand-row{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.steps-area{display:none;}
+.step-section{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.step-section:last-child{border-bottom:none;margin-bottom:0;}
+.step-section-title{font-size:0.82em;font-weight:600;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;}
+.step-desc{font-size:0.85em;color:var(--text-dim);margin-bottom:10px;line-height:1.7;}
+.formula{font-family:'IBM Plex Mono',monospace;color:var(--accent3);font-weight:500;}
+.dmat{display:inline-flex;align-items:center;gap:3px;vertical-align:middle;margin:4px;}
+.dmat .bk{font-size:2.4em;font-weight:100;color:var(--accent);font-family:'IBM Plex Mono',monospace;line-height:1;}
+.dmat table{border-collapse:separate;border-spacing:2px;}
+.dmat td{font-family:'IBM Plex Mono',monospace;font-size:0.82em;font-weight:500;padding:3px 6px;text-align:right;border-radius:4px;min-width:38px;}
+.dmat td.hl-diag{background:rgba(88,166,255,0.15);color:var(--accent);font-weight:700;}
+.dmat td.hl-zero{color:var(--border);}
+.dmat td.hl-changed{background:rgba(63,185,80,0.1);color:var(--accent2);}
+.dmat td.hl-row{background:rgba(88,166,255,0.08);}
+.ev-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;}
+.ev-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.ev-lambda{font-family:'IBM Plex Mono',monospace;font-size:1.05em;font-weight:700;}
+.ev-tag{font-size:0.65em;padding:2px 8px;border-radius:4px;font-weight:600;font-family:'IBM Plex Mono',monospace;}
+.span-box{border-radius:var(--radius);padding:14px 16px;margin-top:8px;}
+.span-box h3{font-family:'IBM Plex Mono',monospace;font-size:0.82em;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.span-box .dim-tag{font-size:0.7em;padding:2px 8px;border-radius:4px;font-weight:600;}
+.span-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:0.9em;margin-top:6px;}
+.col-vec{display:inline-flex;flex-direction:column;align-items:center;padding:3px 7px;border-radius:3px;margin:0 2px;}
+.col-vec div{font-size:0.82em;line-height:1.5;}
+.result-box{border-radius:var(--radius);padding:16px;margin-top:12px;}
+.result-box.success{background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.25);}
+.result-box.fail{background:rgba(255,107,107,0.04);border:1px solid rgba(255,107,107,0.25);}
+.result-box .rlabel{font-size:0.72em;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+.result-wrap{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:0.88em;}
+.toggle-btn{background:none;border:none;color:var(--accent);cursor:pointer;font-family:inherit;font-size:0.78em;padding:2px 6px;border-radius:4px;transition:background 0.15s;}
+.toggle-btn:hover{background:rgba(88,166,255,0.1);}
+.info-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-top:16px;font-size:0.82em;line-height:1.7;color:var(--text-dim);}
+.info-box strong{color:var(--text);font-weight:600;}
+.info-box code{font-family:'IBM Plex Mono',monospace;background:var(--surface);padding:1px 5px;border-radius:3px;font-size:0.95em;color:var(--accent);}
+.poly-line{font-family:'IBM Plex Mono',monospace;font-size:0.9em;line-height:1.8;margin:8px 0;}
+.op-line{font-family:'IBM Plex Mono',monospace;font-size:0.8em;color:var(--text-dim);padding:2px 0;}
+.null-deriv{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:0.8em;line-height:1.8;}
+.ev-c0{color:#58a6ff;}.ev-c1{color:#f0883e;}.ev-c2{color:#bc8cff;}.ev-c3{color:#3fb950;}.ev-c4{color:#56d4dd;}.ev-c5{color:#ff6b6b;}
+.evbg-c0{background:rgba(88,166,255,0.06);border-color:rgba(88,166,255,0.25);}
+.evbg-c1{background:rgba(240,136,62,0.06);border-color:rgba(240,136,62,0.25);}
+.evbg-c2{background:rgba(188,140,255,0.06);border-color:rgba(188,140,255,0.25);}
+.evbg-c3{background:rgba(63,185,80,0.06);border-color:rgba(63,185,80,0.25);}
+.evbg-c4{background:rgba(86,212,221,0.06);border-color:rgba(86,212,221,0.25);}
+.evbg-c5{background:rgba(255,107,107,0.06);border-color:rgba(255,107,107,0.25);}
+@media(max-width:960px){header h1{font-size:1.4em;}.mat-grid input{width:48px;height:34px;font-size:0.8em;}.mat-bk{font-size:2.2rem;}.dmat .bk{font-size:1.8em;}.dmat td{font-size:0.75em;padding:2px 4px;min-width:32px;}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Eigenvalues & <span>Diagonalization</span></h1>
+    <p>정방행렬의 특성방정식, 고유값, 고유공간을 구하고, 대각화가 가능하면 A = PDP⁻¹ 분해까지 단계별로 보여줍니다.</p>
+  </header>
+  <div class="grid">
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel">
+        <div class="panel-title">Matrix (정방행렬)</div>
+        <div class="size-row">
+          <label>크기 n:</label>
+          <input type="number" id="sizeIn" value="3" min="1" max="6">
+          <button class="btn" onclick="applySize()">적용</button>
+        </div>
+        <div class="mat-wrap" id="matWrap"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Controls</div>
+        <div class="controls">
+          <button class="btn primary" onclick="compute()" style="flex:1;">▶ 고유값 & 대각화</button>
+          <button class="btn danger" onclick="clearAll()">초기화</button>
+        </div>
+        <div class="rand-row">
+          <button class="btn" onclick="genRand('diag')" style="flex:1;">🎲 대각화 가능</button>
+          <button class="btn" onclick="genRand('any')" style="flex:1;">🎲 랜덤</button>
+        </div>
+      </div>
+      <div class="info-box">
+        <strong>고유값과 대각화</strong><br>
+        1. 특성방정식: <code>det(λI − A) = 0</code><br>
+        2. 고유값 λ → 대수적 중복도 (algebraic multiplicity)<br>
+        3. 고유공간 <code>E_λ = Null(λI − A)</code> → 기하학적 중복도<br>
+        4. 모든 고유값에 대해 대수적 = 기하학적이면 대각화 가능<br>
+        &nbsp;&nbsp;&nbsp;<code>A = PDP⁻¹</code> (P: 고유벡터, D: 고유값 대각행렬)<br><br>
+        <span style="color:var(--accent3);font-weight:600;">⚠ 본 도구는 고유값이 모두 실수인 경우에 대해 정확한 결과를 제공합니다.</span><br>
+        <span style="color:var(--text-dim);">복소 고유값이 존재하는 행렬은 고유값 탐색까지만 지원되며, 고유공간 및 대각화는 실수 범위에서만 수행됩니다.</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="panel steps-area" id="stepsArea">
+        <div class="panel-title">Step-by-Step</div>
+        <div id="stepsContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let n=3;
+const EVC=['#58a6ff','#f0883e','#bc8cff','#3fb950','#56d4dd','#ff6b6b'];
+
+function applySize(){n=Math.max(1,Math.min(6,parseInt(document.getElementById('sizeIn').value)||3));document.getElementById('sizeIn').value=n;buildMat();}
+function buildMat(){const w=document.getElementById('matWrap');let h='<span class="mat-bk">[</span>';h+=`<div class="mat-grid" style="grid-template-columns:repeat(${n},1fr);">`;for(let i=0;i<n;i++)for(let j=0;j<n;j++)h+=`<input type="text" id="m${i}_${j}" inputmode="decimal">`;h+='</div><span class="mat-bk">]</span>';w.innerHTML=h;}
+function readMat(){const m=[];for(let i=0;i<n;i++){const r=[];for(let j=0;j<n;j++){const v=parseFloat(document.getElementById(`m${i}_${j}`).value);r.push(isNaN(v)?0:v);}m.push(r);}return m;}
+function clearAll(){buildMat();document.getElementById('stepsArea').style.display='none';}
+
+// ── Utils ──
+function fr(num){if(num===null||num===undefined)return'0';if(typeof num==='object')return frS(num);if(typeof num!=='number'||isNaN(num))return'0';if(Math.abs(num-Math.round(num))<1e-9)return''+Math.round(num);for(let d=1;d<=1000;d++){const nr=num*d;if(Math.abs(nr-Math.round(nr))<1e-9){const nn=Math.round(nr),g=gcd(Math.abs(nn),d),t=nn/g,b=d/g;return b===1?''+t:`${t}/${b}`;}}return num.toFixed(4);}
+function gcd(a,b){return b?gcd(b,a%b):a;}
+function cl(m){return m.map(r=>[...r]);}
+function cln(v){return Math.abs(v)<1e-12?0:v;}
+function rI(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function det(M){const s=M.length;if(s===1)return M[0][0];if(s===2)return M[0][0]*M[1][1]-M[0][1]*M[1][0];let d=0;for(let j=0;j<s;j++){const sub=[];for(let i=1;i<s;i++){const row=[];for(let k=0;k<s;k++)if(k!==j)row.push(M[i][k]);sub.push(row);}d+=((j%2===0)?1:-1)*M[0][j]*det(sub);}return d;}
+function matMul(A,B){const r=A.length,c=B[0].length,k=B.length,C=[];for(let i=0;i<r;i++){const row=[];for(let j=0;j<c;j++){let s=0;for(let p=0;p<k;p++)s+=A[i][p]*B[p][j];row.push(s);}C.push(row);}return C;}
+
+// ── Surd arithmetic: {a, b, d} = a + b√d ──
+function S(a,b,d){return{a:a||0,b:b||0,d:d||0};}
+function Sf(x){return{a:x,b:0,d:0};}
+function Sv(x){return x.a+(x.b||0)*Math.sqrt(x.d||0);}
+function Sz(x){return Math.abs(Sv(x))<1e-9;}
+function Sadd(x,y){if(x.d&&y.d&&x.d!==y.d)return Sf(Sv(x)+Sv(y));return{a:x.a+y.a,b:(x.b||0)+(y.b||0),d:x.d||y.d};}
+function Ssub(x,y){if(x.d&&y.d&&x.d!==y.d)return Sf(Sv(x)-Sv(y));return{a:x.a-y.a,b:(x.b||0)-(y.b||0),d:x.d||y.d};}
+function Smul(x,y){if(!x.d&&!y.d)return Sf(x.a*y.a);const d=x.d||y.d;if(x.d&&y.d&&x.d!==y.d)return Sf(Sv(x)*Sv(y));return{a:x.a*y.a+((x.b||0)*(y.b||0)*d),b:x.a*(y.b||0)+(x.b||0)*y.a,d};}
+function Sdiv(x,y){if(!y.d||Math.abs(y.b||0)<1e-12){if(Math.abs(y.a)<1e-12)return Sf(0);return{a:x.a/y.a,b:(x.b||0)/y.a,d:x.d||0};}const d=y.d;const num=Smul({a:x.a,b:x.b||0,d:x.d||d},{a:y.a,b:-(y.b||0),d});const den=y.a*y.a-(y.b||0)*(y.b||0)*d;if(Math.abs(den)<1e-12)return Sf(Sv(x)/Sv(y));return{a:num.a/den,b:(num.b||0)/den,d};}
+function Sneg(x){return{a:-x.a,b:-(x.b||0),d:x.d||0};}
+
+function frS(x){
+  if(!x||(!x.d&&!(x.b)))return fr(x?x.a:0);
+  if(!x.d||Math.abs(x.b||0)<1e-9)return fr(x.a);
+  // x = a + b√d. Express as (p + q√d)/r in lowest terms
+  const a=x.a, b=x.b, d=x.d;
+  // Find common denominator for a and b
+  let na=a,nb=b,den=1;
+  // Scale to integers if possible
+  for(let dd=1;dd<=1000;dd++){
+    if(Math.abs(na*dd-Math.round(na*dd))<1e-9&&Math.abs(nb*dd-Math.round(nb*dd))<1e-9){
+      den=dd;na=Math.round(a*dd);nb=Math.round(b*dd);break;
+    }
+  }
+  const g=gcd(gcd(Math.abs(na),Math.abs(nb)),den);
+  na/=g;nb/=g;den/=g;
+  if(den<0){na=-na;nb=-nb;den=-den;}
+  // Build string: (na + nb√d) / den
+  let num='';
+  if(na!==0)num+=na;
+  if(nb!==0){
+    const sign=nb>0?'+':'−';const ab=Math.abs(nb);
+    if(num)num+=` ${sign} `;else if(nb<0)num+='−';
+    if(ab!==1)num+=ab;
+    num+=`√${d}`;
+  }
+  if(!num)return'0';
+  if(den===1)return num;
+  return`(${num})/${den}`;
+}
+function frSH(x){
+  if(!x||(!x.d&&!(x.b)))return fr(x?x.a:0);
+  if(!x.d||Math.abs(x.b||0)<1e-9)return fr(x.a);
+  const a=x.a, b=x.b, d=x.d;
+  let na=a,nb=b,den=1;
+  for(let dd=1;dd<=1000;dd++){
+    if(Math.abs(na*dd-Math.round(na*dd))<1e-9&&Math.abs(nb*dd-Math.round(nb*dd))<1e-9){
+      den=dd;na=Math.round(a*dd);nb=Math.round(b*dd);break;
+    }
+  }
+  const g=gcd(gcd(Math.abs(na),Math.abs(nb)),den);
+  na/=g;nb/=g;den/=g;
+  if(den<0){na=-na;nb=-nb;den=-den;}
+  const ov=`√<span style="text-decoration:overline">${d}</span>`;
+  let num='';
+  if(na!==0)num+=na;
+  if(nb!==0){
+    const sign=nb>0?'+':'−';const ab=Math.abs(nb);
+    if(num)num+=` ${sign} `;else if(nb<0)num+='−';
+    if(ab!==1)num+=ab;
+    num+=ov;
+  }
+  if(!num)return'0';
+  if(den===1)return num;
+  // Use fraction display
+  return`<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.2;font-size:0.95em;"><span style="border-bottom:1px solid var(--text-dim);padding:0 3px;">${num}</span><span style="padding:0 3px;">${den}</span></span>`;
+}
+
+// ── Random ──
+function genRand(type){
+  buildMat();
+  if(type==='diag'){
+    // Distinct eigenvalues → always diagonalizable
+    const pool=[-4,-3,-2,-1,0,1,2,3,4];
+    const shuffled=pool.sort(()=>Math.random()-0.5);
+    const eigs=[];for(let i=0;i<n;i++) eigs.push(shuffled[i]);
+    let P;
+    do{P=[];for(let i=0;i<n;i++){const r=[];for(let j=0;j<n;j++)r.push(rI(-2,2));P.push(r);}}while(Math.abs(det(P))<0.5);
+    const D=[];for(let i=0;i<n;i++){const r=Array(n).fill(0);r[i]=eigs[i];D.push(r);}
+    const Pi=invNum(P);if(!Pi)return genRand(type);
+    const A=matMul(matMul(P,D),Pi);
+    for(let i=0;i<n;i++)for(let j=0;j<n;j++)document.getElementById(`m${i}_${j}`).value=Math.round(A[i][j]);
+  } else {
+    // Random: sometimes diagonalizable, sometimes not
+    // Use Jordan form with occasional 1's above diagonal (non-diagonalizable)
+    const eigs=[];
+    for(let i=0;i<n;i++) eigs.push(rI(-3,3));
+    // Build Jordan matrix J
+    const J=[];
+    for(let i=0;i<n;i++){const r=Array(n).fill(0);r[i]=eigs[i];J.push(r);}
+    // With ~40% chance, add a Jordan block (1 above diagonal for repeated eigenvalue)
+    if(n>=2&&Math.random()<0.4){
+      // Force a repeated eigenvalue and add superdiagonal 1
+      const lam=rI(-3,3);
+      J[0][0]=lam;J[1][1]=lam;
+      J[0][1]=1; // This makes it non-diagonalizable
+    }
+    let P;
+    do{P=[];for(let i=0;i<n;i++){const r=[];for(let j=0;j<n;j++)r.push(rI(-2,2));P.push(r);}}while(Math.abs(det(P))<0.5);
+    const Pi=invNum(P);if(!Pi)return genRand(type);
+    const A=matMul(matMul(P,J),Pi);
+    for(let i=0;i<n;i++)for(let j=0;j<n;j++)document.getElementById(`m${i}_${j}`).value=Math.round(A[i][j]);
+  }
+}
+function invNum(M){const s=M.length,d=det(M);if(Math.abs(d)<1e-12)return null;const adj=[];for(let i=0;i<s;i++){adj.push([]);for(let j=0;j<s;j++){const sub=[];for(let r=0;r<s;r++){if(r===j)continue;const row=[];for(let c=0;c<s;c++){if(c===i)continue;row.push(M[r][c]);}sub.push(row);}adj[i].push(((i+j)%2===0?1:-1)*det(sub)/d);}}return adj;}
+
+// ── Char poly via Faddeev-LeVerrier for det(λI-A) ──
+function charPoly(A){
+  const s=A.length;
+  if(s===1)return[-A[0][0],1];
+  if(s===2){const tr=A[0][0]+A[1][1],d=A[0][0]*A[1][1]-A[0][1]*A[1][0];return[d,-tr,1];}
+  if(s===3){const tr=A[0][0]+A[1][1]+A[2][2];const m2=(A[0][0]*A[1][1]-A[0][1]*A[1][0])+(A[0][0]*A[2][2]-A[0][2]*A[2][0])+(A[1][1]*A[2][2]-A[1][2]*A[2][1]);const d=det(A);return[-d,m2,-tr,1];}
+  const c=Array(s+1).fill(0);c[s]=1;let M=cl(A);
+  for(let k=1;k<=s;k++){if(k===1){M=cl(A);}else{const prev=cl(M);for(let i=0;i<s;i++)prev[i][i]+=c[s-k+1];M=matMul(A,prev);}let t=0;for(let i=0;i<s;i++)t+=M[i][i];c[s-k]=cln(-t/k);}return c;
+}
+function formatPoly(c){const deg=c.length-1;let h='';for(let k=deg;k>=0;k--){const v=c[k];if(Math.abs(v)<1e-12)continue;const av=Math.abs(v),pos=v>0;if(h){h+=pos?' + ':' − ';}else if(!pos)h+='−';if(k===0)h+=fr(av);else if(k===1){if(Math.abs(av-1)>1e-9)h+=fr(av);h+='λ';}else{if(Math.abs(av-1)>1e-9)h+=fr(av);h+=`λ<sup>${k}</sup>`;}}return h||'0';}
+
+// ── Find eigenvalues ──
+function findEigenvalues(coeffs){
+  const s=coeffs.length-1,lead=coeffs[s],p=coeffs.map(c=>c/lead);
+  if(s===1)return[{val:-p[0],mult:1}];
+  if(s===2)return solveQ(1,p[1],p[0]);
+  const roots=[];let rem=[...p];
+  const cands=new Set();for(let i=-15;i<=15;i++){cands.add(i);cands.add(i/2);cands.add(i/3);}
+  const c0=Math.abs(Math.round(p[0]));if(c0>0)for(let d=1;d<=c0;d++){if(c0%d===0){cands.add(d);cands.add(-d);}}
+  for(const r of cands){if(rem.length<=1)break;while(rem.length>1&&Math.abs(evalP(rem,r))<1e-8){rem=synthDiv(rem,r);const ex=roots.find(x=>!x.surd&&Math.abs(x.val-r)<1e-9);if(ex)ex.mult++;else roots.push({val:r,mult:1});}}
+  if(rem.length===3){roots.push(...solveQ(rem[2],rem[1],rem[0]));}
+  else if(rem.length===2){const r=cln(-rem[0]/rem[1]);const ex=roots.find(x=>!x.surd&&Math.abs(x.val-r)<1e-9);if(ex)ex.mult++;else roots.push({val:r,mult:1});}
+  else if(rem.length>3){const nr=numRoots(rem);for(const r of nr){const ex=roots.find(x=>Math.abs(x.val-r)<1e-6);if(ex)ex.mult++;else roots.push({val:r,mult:1,approx:true});}}
+  roots.sort((a,b)=>a.val-b.val);return roots;
+}
+function solveQ(a,b,c){const disc=b*b-4*a*c;if(Math.abs(disc)<1e-9)return[{val:cln(-b/(2*a)),mult:2}];if(disc<-1e-9){const re=cln(-b/(2*a)),im=Math.sqrt(-disc)/(2*a);return[{val:re,mult:1,imag:im},{val:re,mult:1,imag:-im}];}const sq=Math.sqrt(disc),sqR=Math.round(sq);if(Math.abs(sqR*sqR-disc)<1e-6){const r1=cln((-b+sqR)/(2*a)),r2=cln((-b-sqR)/(2*a));if(Math.abs(r1-r2)<1e-9)return[{val:r1,mult:2}];return[{val:Math.min(r1,r2),mult:1},{val:Math.max(r1,r2),mult:1}];}
+  const dI=Math.round(disc);if(Math.abs(dI-disc)<1e-6&&dI>0){const{outer:ot,inner:inn}=simpRad(dI);const den=2*a,num=-b;const g=gcd(gcd(Math.abs(Math.round(num)),Math.abs(Math.round(ot))),Math.abs(Math.round(den)));const sA=Math.round(num/g),sO=Math.round(ot/g),sD=Math.round(den/g);const r1=(-b+Math.sqrt(disc))/(2*a),r2=(-b-Math.sqrt(disc))/(2*a);
+  return[{val:Math.min(r1,r2),mult:1,surd:{center:sA,outer:Math.abs(sO),inner:inn,denom:Math.abs(sD),sign:sO>=0?-1:1}},{val:Math.max(r1,r2),mult:1,surd:{center:sA,outer:Math.abs(sO),inner:inn,denom:Math.abs(sD),sign:sO>=0?1:-1}}];}
+  const r1=(-b+Math.sqrt(disc))/(2*a),r2=(-b-Math.sqrt(disc))/(2*a);return[{val:Math.min(r1,r2),mult:1,approx:true},{val:Math.max(r1,r2),mult:1,approx:true}];
+}
+function simpRad(n){let o=1,i=n;for(let p=2;p*p<=i;p++)while(i%(p*p)===0){o*=p;i/=p*p;}return{outer:o,inner:i};}
+function evalP(p,x){let v=0,xk=1;for(let i=0;i<p.length;i++){v+=p[i]*xk;xk*=x;}return v;}
+function synthDiv(p,r){const nn=p.length-1;const q=Array(nn).fill(0);q[nn-1]=p[nn];for(let i=nn-1;i>=1;i--)q[i-1]=p[i]+r*q[i];return q;}
+function numRoots(p){const roots=[];for(let x=-20;x<=20;x+=0.1){if(evalP(p,x)*evalP(p,x+0.1)<=0){let lo=x,hi=x+0.1;for(let i=0;i<50;i++){const mid=(lo+hi)/2;if(evalP(p,mid)*evalP(p,lo)<=0)hi=mid;else lo=mid;}const r=cln((lo+hi)/2);if(!roots.some(rr=>Math.abs(rr-r)<1e-6))roots.push(r);}}return roots;}
+
+function frEV(e){if(e.imag)return`${fr(e.val)} ${e.imag>0?'+':'−'} ${fr(Math.abs(e.imag))}i`;if(e.surd){const s=e.surd;let num='';if(s.center!==0)num+=s.center;const sc=s.sign>0?'+':'−';if(num)num+=` ${sc} `;else if(s.sign<0)num+='−';if(s.outer!==1)num+=s.outer;num+=`√${s.inner}`;if(s.denom!==1)return`(${num})/${s.denom}`;return num;}if(e.approx)return`≈${e.val.toFixed(4)}`;return fr(e.val);}
+function frEVH(e){if(e.imag)return`${fr(e.val)} ${e.imag>0?'+':'−'} ${fr(Math.abs(e.imag))}i`;if(e.surd){const s=e.surd;let num='';if(s.center!==0)num+=`${s.center} `;const sc=s.sign>0?'+':'−';if(num)num+=`${sc} `;else if(s.sign<0)num+='−';if(s.outer!==1)num+=s.outer;num+=`√<span style="text-decoration:overline">${s.inner}</span>`;if(s.denom!==1)return`<span style="display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.2;"><span style="border-bottom:1px solid var(--text-dim);padding:0 3px;">${num}</span><span style="padding:0 3px;">${s.denom}</span></span>`;return num;}if(e.approx)return`≈${e.val.toFixed(4)}`;return fr(e.val);}
+
+// ── Eigenspace with surd arithmetic + step recording ──
+function eigenspace(A,ev){
+  const s=A.length,isSurd=!!ev.surd,d=isSurd?ev.surd.inner:0;
+  // Build λI - A with surd
+  const M=[];
+  for(let i=0;i<s;i++){const row=[];for(let j=0;j<s;j++){
+    if(i===j){
+      if(isSurd){const su=ev.surd;const lA=(su.center)/(su.denom),lB=(su.sign*(su.outer||1))/(su.denom);M.push||0;row.push(Ssub({a:lA,b:lB,d:su.inner},Sf(A[i][j])));}
+      else row.push(Sf(ev.val-A[i][j]));
+    } else row.push(Sf(-A[i][j]));
+  }M.push(row);}
+
+  const steps=[];
+  steps.push({label:`λI − A (λ = ${frEV(ev)})`,mat:M.map(r=>r.map(x=>({...x})))});
+
+  // RREF
+  let pR=0,pivotCols=[];
+  for(let col=0;col<s&&pR<s;col++){
+    let fd=-1;for(let i=pR;i<s;i++)if(!Sz(M[i][col])){fd=i;break;}
+    if(fd===-1)continue;
+    if(fd!==pR){[M[pR],M[fd]]=[M[fd],M[pR]];steps.push({label:`R${pR+1} ↔ R${fd+1}`,mat:M.map(r=>r.map(x=>({...x})))});}
+    const pv=M[pR][col];
+    if(Math.abs(Sv(pv)-1)>1e-9){for(let j=0;j<s;j++)M[pR][j]=Sdiv(M[pR][j],pv);steps.push({label:`R${pR+1} ← (1/(${frS(pv)}))·R${pR+1}`,mat:M.map(r=>r.map(x=>({...x})))});}
+    for(let i=0;i<s;i++){if(i===pR||Sz(M[i][col]))continue;const f=M[i][col];for(let j=0;j<s;j++)M[i][j]=Ssub(M[i][j],Smul(f,M[pR][j]));steps.push({label:`R${i+1} ← R${i+1} − (${frS(f)})·R${pR+1}`,mat:M.map(r=>r.map(x=>({...x})))});}
+    pivotCols.push(col);pR++;
+  }
+
+  const pivotSet=new Set(pivotCols);
+  const freeIdx=[];for(let j=0;j<s;j++)if(!pivotSet.has(j))freeIdx.push(j);
+  const basis=[],basisS=[];
+  for(const fi of freeIdx){
+    const v=Array(s).fill(0),vs=Array(s).fill(null).map(()=>Sf(0));
+    vs[fi]=Sf(1);v[fi]=1;
+    for(let k=0;k<pivotCols.length;k++){vs[pivotCols[k]]=Sneg(M[k][fi]);v[pivotCols[k]]=cln(-Sv(M[k][fi]));}
+    basis.push(v);basisS.push(vs);
+  }
+  const hasSurd=basisS.some(vs=>vs.some(x=>x.d&&Math.abs(x.b)>1e-9));
+  return{basis,basisS,hasSurd,geomMult:basis.length,rref:M,freeIdx,pivotCols,steps};
+}
+
+// ── Surd matrix inverse via adjugate (for P⁻¹) ──
+function surdMatInv(basisS,n){
+  // P columns = basisS vectors. Build P as surd matrix, compute adj/det
+  const P=[];for(let i=0;i<n;i++){const row=[];for(let k=0;k<n;k++)row.push(basisS[k][i]);P.push(row);}
+  const d=surdDet(P,n);if(Sz(d))return null;
+  const adj=[];
+  for(let i=0;i<n;i++){adj.push([]);for(let j=0;j<n;j++){
+    const sub=[];for(let r=0;r<n;r++){if(r===j)continue;const row=[];for(let c=0;c<n;c++){if(c===i)continue;row.push(P[r][c]);}sub.push(row);}
+    const cofVal=surdDet(sub,n-1);
+    adj[i].push(Sdiv(((i+j)%2===0?cofVal:Sneg(cofVal)),d));
+  }}
+  return{Pinv:adj,Pmat:P,detP:d};
+}
+function surdDet(M,s){
+  if(s===1)return M[0][0];
+  if(s===2)return Ssub(Smul(M[0][0],M[1][1]),Smul(M[0][1],M[1][0]));
+  let d=Sf(0);
+  for(let j=0;j<s;j++){const sub=[];for(let i=1;i<s;i++){const row=[];for(let k=0;k<s;k++)if(k!==j)row.push(M[i][k]);sub.push(row);}
+  const cofVal=Smul(M[0][j],surdDet(sub,s-1));d=(j%2===0)?Sadd(d,cofVal):Ssub(d,cofVal);}return d;
+}
+
+// ── Main compute ──
+function compute(){
+  const A=readMat();let html='';
+
+  // Step 1: Char poly
+  const coeffs=charPoly(A);
+  html+='<div class="step-section">';
+  html+='<div class="step-section-title" style="color:var(--accent);">Step 1. 특성방정식 P<sub>A</sub>(λ) = det(λI − A) = 0</div>';
+  html+='<div style="margin:6px 0;"><span style="font-family:IBM Plex Mono,monospace;font-size:0.85em;">λI − A = </span>';
+  html+=renderLIA(A);html+='</div>';
+  html+=`<div class="poly-line">P<sub>A</sub>(λ) = ${formatPoly(coeffs)} = 0</div></div>`;
+
+  // Step 2: Eigenvalues
+  const eigenvals=findEigenvalues(coeffs);
+  const realEVs=eigenvals.filter(e=>!e.imag),complexEVs=eigenvals.filter(e=>e.imag);
+  html+='<div class="step-section">';
+  html+='<div class="step-section-title" style="color:var(--accent3);">Step 2. 고유값 (Eigenvalues)</div>';
+  if(complexEVs.length>0)html+='<div class="step-desc" style="color:var(--red);">⚠ 복소 고유값이 존재합니다.</div>';
+
+  // Factored form
+  html+='<div class="poly-line" style="color:var(--text-dim);">P<sub>A</sub>(λ) = ';
+  const usedI=new Set();const qfs=[];
+  for(let i=0;i<realEVs.length;i++){if(usedI.has(i)||!realEVs[i].surd)continue;for(let j=i+1;j<realEVs.length;j++){if(!usedI.has(j)&&realEVs[j].surd&&realEVs[j].surd.inner===realEVs[i].surd.inner&&realEVs[j].surd.center===realEVs[i].surd.center){usedI.add(i);usedI.add(j);qfs.push({sum:cln(realEVs[i].val+realEVs[j].val),prod:cln(realEVs[i].val*realEVs[j].val)});break;}}}
+  for(let i=0;i<realEVs.length;i++){if(usedI.has(i))continue;const e=realEVs[i],lv=e.val;html+='(λ';if(Math.abs(lv)>1e-12)html+=lv>0?` − ${fr(lv)}`:` + ${fr(-lv)}`;html+=')';if(e.mult>1)html+=`<sup>${e.mult}</sup>`;}
+  for(const qf of qfs){html+='(λ<sup>2</sup>';if(Math.abs(qf.sum)>1e-12)html+=qf.sum>0?` − ${fr(qf.sum)}λ`:` + ${fr(-qf.sum)}λ`;if(Math.abs(qf.prod)>1e-12)html+=qf.prod>0?` + ${fr(qf.prod)}`:` − ${fr(-qf.prod)}`;html+=')';}
+  if(complexEVs.length>0)html+=' · (복소인수)';
+  html+=' = 0</div>';
+
+  for(let i=0;i<realEVs.length;i++){const e=realEVs[i],ci=i%EVC.length;
+  html+=`<div style="font-family:IBM Plex Mono,monospace;font-size:0.9em;margin:4px 0;"><span class="ev-c${ci}" style="font-weight:700;">λ<sub>${i+1}</sub> = ${frEVH(e)}</span><span style="color:var(--text-dim);font-size:0.8em;margin-left:8px;">(대수적 중복도 = ${e.mult})</span></div>`;}
+  html+='</div>';
+
+  // Step 3: Eigenspaces
+  html+='<div class="step-section">';
+  html+='<div class="step-section-title" style="color:var(--purple);">Step 3. 고유공간 E<sub>λ</sub> = Null(λI − A)</div>';
+  let diag=true;const allVS=[],allV=[];
+  for(let i=0;i<realEVs.length;i++){
+    const e=realEVs[i],ci=i%EVC.length,es=eigenspace(A,e);
+    if(es.geomMult<e.mult)diag=false;
+    for(let vi=0;vi<es.basis.length;vi++){allV.push(es.basis[vi]);allVS.push(es.basisS[vi]);}
+    const rgb=ci===0?'88,166,255':ci===1?'240,136,62':ci===2?'188,140,255':ci===3?'63,185,80':ci===4?'86,212,221':'255,107,107';
+    html+=`<div class="ev-card evbg-c${ci}" style="border:1px solid;">`;
+    html+='<div class="ev-header">';
+    html+=`<span class="ev-lambda ev-c${ci}">λ = ${frEVH(e)}</span>`;
+    html+=`<span class="ev-tag" style="background:rgba(${rgb},0.15);color:${EVC[ci]};">A.M. (대수적 중복도) = ${e.mult}</span>`;
+    html+=`<span class="ev-tag" style="background:rgba(${rgb},0.15);color:${EVC[ci]};">G.M. (기하학적 중복도) = ${es.geomMult}</span>`;
+    if(es.geomMult<e.mult)html+='<span style="color:var(--red);font-size:0.75em;font-weight:600;">⚠ G.M. < A.M.</span>';
+    html+='</div>';
+
+    // Row reduction steps
+    html+=`<button class="toggle-btn" onclick="tog('es${i}')">▸ Null(λI − A) 행연산 과정 (${es.steps.length}단계)</button>`;
+    html+=`<div id="es${i}" style="display:none;margin-top:6px;">`;
+    for(const st of es.steps){html+=`<div class="op-line"><span class="formula">${st.label}</span></div><div style="margin:2px 0 8px;">${renderSurdMat(st.mat,n)}</div>`;}
+    // Null space derivation
+    if(es.freeIdx.length>0){
+      html+='<div class="null-deriv">';
+      html+=`<div style="color:var(--text);font-weight:600;margin-bottom:4px;">Null 공간 구하기 (자유변수: x<sub>${es.freeIdx.map(j=>j+1).join('</sub>, x<sub>')}</sub>):</div>`;
+      html+='<div style="color:var(--text-dim);margin-bottom:6px;">피벗 변수를 자유변수로 표현:</div>';
+      for(let k=es.pivotCols.length-1;k>=0;k--){
+        const pc=es.pivotCols[k];
+        let expr='';
+        for(let fi=0;fi<es.freeIdx.length;fi++){const fj=es.freeIdx[fi];const coef=Sneg(es.rref[k][fj]);if(Sz(coef))continue;const cs=frSH(coef);if(expr)expr+=Sv(coef)>0?` + ${cs}`:` − ${frSH({...coef,a:-coef.a,b:-(coef.b||0),d:coef.d})}`;else expr=cs;expr+=`·x<sub>${fj+1}</sub>`;}
+        if(!expr)expr='0';
+        html+=`<div>x<sub>${pc+1}</sub> = ${expr}</div>`;
+      }
+      for(const fi of es.freeIdx)html+=`<div>x<sub>${fi+1}</sub> = x<sub>${fi+1}</sub> (자유)</div>`;
+      html+='</div>';
+    }
+    html+='</div>';
+
+    // Span
+    html+=`<div class="span-box" style="background:transparent;border:none;padding:8px 0;">`;
+    html+=`<h3 style="color:${EVC[ci]};">E<sub>${frEVH(e)}</sub> <span class="dim-tag" style="background:rgba(${rgb},0.15);color:${EVC[ci]};">dim = ${es.geomMult}</span></h3>`;
+    html+='<div class="span-row"><span>= span {</span>';
+    for(let k=0;k<es.basisS.length;k++){if(k>0)html+='<span style="color:var(--text-dim);margin:0 3px;">,</span>';html+=renderCV(es.basisS[k],EVC[ci]);}
+    html+='<span>}</span></div></div></div>';
+  }
+  if(complexEVs.length>0)diag=false;
+  html+='</div>';
+
+  // Step 4: Diagonalization
+  html+='<div class="step-section">';
+  html+='<div class="step-section-title" style="color:var(--accent2);">Step 4. 대각화 (Diagonalization)</div>';
+  if(!diag||allVS.length!==n){
+    let reason=complexEVs.length>0?'복소 고유값이 존재':'일부 고유값에서 G.M. < A.M.';
+    if(allVS.length!==n&&!complexEVs.length)reason=`독립 고유벡터 수(${allVS.length}) ≠ n(${n})`;
+    html+=`<div class="result-box fail"><div class="rlabel">결과</div><div style="font-family:IBM Plex Mono,monospace;font-size:0.95em;color:var(--red);font-weight:600;">대각화 불가능</div><div style="font-size:0.82em;color:var(--text-dim);margin-top:4px;">${reason}</div></div>`;
+  } else {
+    // Build P, D, P⁻¹ with surds
+    const invResult=surdMatInv(allVS,n);
+    // D matrix (surd eigenvalues on diagonal)
+    const Dmat=[];
+    for(let i=0;i<n;i++){const row=[];for(let j=0;j<n;j++)row.push(i===j?allVS[i][0]:Sf(0));Dmat.push(row);} // placeholder
+    // Actually D should have eigenvalues, not eigenvector components
+    // Reconstruct: allV[i] came from eigenvalue...
+    // We need to track which eigenvalue each vector belongs to
+    const Dmat2=[];let vi=0;
+    for(const e of realEVs){for(let k=0;k<(e.surd?1:1);k++){/* each eigenvector from this eigenvalue */}}
+    // Simpler: reconstruct from the order we pushed
+    const eigOrder=[];
+    for(const e of realEVs){const es2=eigenspace(A,e);for(let k=0;k<es2.geomMult;k++)eigOrder.push(e);}
+    const D=[];for(let i=0;i<n;i++){const row=Array(n).fill(Sf(0));
+      if(i<eigOrder.length){const e=eigOrder[i];if(e.surd){const su=e.surd;row[i]={a:su.center/su.denom,b:(su.sign*(su.outer||1))/su.denom,d:su.inner};}else row[i]=Sf(e.val);}
+    D.push(row);}
+
+    html+=`<div class="result-box success"><div class="rlabel">A = PDP⁻¹</div>`;
+    html+='<div class="step-desc">모든 고유값에서 A.M. = G.M. → 대각화 가능!</div>';
+
+    // Build color index for each eigenvector column
+    const colColors=[];
+    let evIdx=0;
+    for(let ei=0;ei<realEVs.length;ei++){
+      const es2=eigenspace(A,realEVs[ei]);
+      for(let k=0;k<es2.geomMult;k++){colColors.push(ei%EVC.length);evIdx++;}
+    }
+
+    // P
+    const Pmat=[];for(let i=0;i<n;i++){const row=[];for(let k=0;k<n;k++)row.push(allVS[k][i]);Pmat.push(row);}
+    html+='<div style="font-size:0.85em;margin:8px 0;">P (고유벡터 행렬):</div>';
+    html+=`<div style="margin:4px 0;">${renderColoredColMat(Pmat,n,colColors)}</div>`;
+    html+='<div style="font-size:0.85em;margin:8px 0;">D (고유값 대각행렬):</div>';
+    html+=`<div style="margin:4px 0;">${renderColoredDiagMat(D,n,colColors)}</div>`;
+
+    if(invResult){
+      html+='<div style="font-size:0.85em;margin:8px 0;">P⁻¹:</div>';
+      html+=`<div style="margin:4px 0;">${renderSurdMat(invResult.Pinv,n)}</div>`;
+      html+='<div class="result-wrap" style="margin-top:12px;"><span style="font-weight:600;">A =</span>';
+      html+=renderColoredColMat(Pmat,n,colColors);html+=renderColoredDiagMat(D,n,colColors);html+=renderSurdMat(invResult.Pinv,n);
+      html+='</div>';
+    }
+    html+='</div>';
+  }
+  html+='</div>';
+
+  document.getElementById('stepsContent').innerHTML=html;
+  document.getElementById('stepsArea').style.display='block';
+  document.getElementById('stepsArea').scrollIntoView({behavior:'smooth'});
+}
+
+// ── Render helpers ──
+function renderLIA(A){let h='<span class="dmat"><span class="bk">[</span><table>';for(let i=0;i<n;i++){h+='<tr>';for(let j=0;j<n;j++){const v=A[i][j];let t='';if(i===j){if(Math.abs(v)<1e-12)t='λ';else t=`λ${v>0?' − '+fr(v):' + '+fr(-v)}`;}else t=fr(-v);h+=`<td>${t}</td>`;}h+='</tr>';}h+='</table><span class="bk">]</span></span>';return h;}
+function renderSurdMat(mat,sz){let h='<span class="dmat"><span class="bk">[</span><table>';for(let i=0;i<sz;i++){h+='<tr>';for(let j=0;j<sz;j++){const v=mat[i][j];const val=typeof v==='object'?Sv(v):v;const txt=typeof v==='object'?frSH(v):fr(v);const cls=Math.abs(val)<1e-12?'hl-zero':'';h+=`<td class="${cls}">${txt}</td>`;}h+='</tr>';}h+='</table><span class="bk">]</span></span>';return h;}
+
+// P: each column colored by eigenvalue with column background blocks
+function renderColoredColMat(mat,sz,colColors){
+  let h='<span class="dmat"><span class="bk">[</span><table>';
+  for(let i=0;i<sz;i++){h+='<tr>';for(let j=0;j<sz;j++){
+    const v=mat[i][j];const val=typeof v==='object'?Sv(v):v;
+    const txt=typeof v==='object'?frSH(v):fr(v);
+    const ci=j<colColors.length?colColors[j]:0;
+    const color=EVC[ci];
+    // Column background: top corners for first row, bottom corners for last row
+    const isTop=i===0,isBot=i===sz-1;
+    const br=isTop&&isBot?'6px':isTop?'6px 6px 0 0':isBot?'0 0 6px 6px':'0';
+    h+=`<td style="color:${color};background:${color}12;border-radius:${br};${Math.abs(val)<1e-12?'opacity:0.4;':''}">${txt}</td>`;
+  }h+='</tr>';}
+  h+='</table><span class="bk">]</span></span>';return h;
+}
+
+// D: diagonal colored by eigenvalue
+function renderColoredDiagMat(mat,sz,colColors){
+  let h='<span class="dmat"><span class="bk">[</span><table>';
+  for(let i=0;i<sz;i++){h+='<tr>';for(let j=0;j<sz;j++){
+    const v=mat[i][j];const val=typeof v==='object'?Sv(v):v;
+    const txt=typeof v==='object'?frSH(v):fr(v);
+    if(i===j){const ci=i<colColors.length?colColors[i]:0;const color=EVC[ci];
+      h+=`<td style="color:${color};font-weight:700;background:rgba(255,255,255,0.04);">${txt}</td>`;
+    }else{h+=`<td class="hl-zero">${txt}</td>`;}
+  }h+='</tr>';}
+  h+='</table><span class="bk">]</span></span>';return h;
+}
+function renderCV(vs,color){let h=`<div class="col-vec" style="border-left:2px solid ${color};border-right:2px solid ${color};">`;for(const v of vs)h+=`<div style="color:${color};">${typeof v==='object'?frSH(v):fr(v)}</div>`;h+='</div>';return h;}
+function tog(id){const el=document.getElementById(id);const btn=el.previousElementSibling;if(el.style.display==='none'){el.style.display='block';btn.textContent=btn.textContent.replace('▸','▾').replace('보기','접기');}else{el.style.display='none';btn.textContent=btn.textContent.replace('▾','▸').replace('접기','보기');}}
+buildMat();
+</script>
+<script data-goatcounter="https://takwon-sungshin.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
