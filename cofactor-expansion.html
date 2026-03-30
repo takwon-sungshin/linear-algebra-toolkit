@@ -104,16 +104,35 @@ header p { color:var(--text-dim); font-size:0.95em; max-width:750px; margin:0 au
   border-top:1px solid var(--border);
 }
 
-/* Expand row selector */
-.expand-row {
-  display:flex; align-items:center; gap:10px; margin-top:14px;
-  font-size:0.85em; color:var(--text-dim);
+/* Expand selector: clickable row/col headers around matrix */
+.mat-outer {
+  display:inline-grid; gap:0; margin:12px auto;
+  overflow-x:auto; padding:4px 0;
 }
-.expand-row select {
-  background:var(--bg); border:1px solid var(--border); border-radius:5px;
-  color:var(--text); padding:4px 8px; font-family:'IBM Plex Mono',monospace;
-  font-size:0.85em; cursor:pointer;
+.mat-outer .corner { width:32px; height:28px; }
+.mat-outer .col-hdr {
+  display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono',monospace; font-size:0.72em;
+  color:var(--text-dim); cursor:pointer; padding:2px 0;
+  border-radius:5px 5px 0 0; transition:all 0.15s; user-select:none;
+  border:1px solid transparent; min-width:58px;
 }
+.mat-outer .col-hdr:hover { color:var(--accent); background:rgba(88,166,255,0.08); }
+.mat-outer .col-hdr.selected { color:var(--bg); background:var(--accent); border-color:var(--accent); font-weight:600; }
+.mat-outer .row-hdr {
+  display:flex; align-items:center; justify-content:center;
+  font-family:'IBM Plex Mono',monospace; font-size:0.72em;
+  color:var(--text-dim); cursor:pointer; padding:0 4px;
+  border-radius:5px 0 0 5px; transition:all 0.15s; user-select:none;
+  border:1px solid transparent; width:32px;
+}
+.mat-outer .row-hdr:hover { color:var(--accent); background:rgba(88,166,255,0.08); }
+.mat-outer .row-hdr.selected { color:var(--bg); background:var(--accent); border-color:var(--accent); font-weight:600; }
+.expand-hint {
+  font-size:0.75em; color:var(--text-dim); text-align:center; margin-top:6px;
+  font-family:'IBM Plex Mono',monospace;
+}
+.expand-hint span { color:var(--accent); font-weight:600; }
 
 /* Steps area */
 .steps-area { display:none; }
@@ -234,7 +253,7 @@ header p { color:var(--text-dim); font-size:0.95em; max-width:750px; margin:0 au
 <div class="container">
   <header>
     <h1><span>Determinant</span> (행렬식 구하기)</h1>
-    <p>정방행렬의 행렬식(determinant)을 여인수전개를 통해 단계별로 계산하는 과정을 보여줍니다.</p>
+    <p>정사각행렬의 행렬식(determinant)을 여인수전개를 통해 단계별로 계산하는 과정을 보여줍니다.</p>
   </header>
 
   <div class="grid">
@@ -248,13 +267,8 @@ header p { color:var(--text-dim); font-size:0.95em; max-width:750px; margin:0 au
           <input type="number" id="sizeInput" value="3" min="1" max="8">
           <button class="btn" onclick="changeSize()">적용</button>
         </div>
-        <div class="mat-wrap" id="matWrap"></div>
-        <div class="expand-row">
-          <label>전개할 행:</label>
-          <select id="expandRow"></select>
-          <label style="margin-left:8px;">또는 열:</label>
-          <select id="expandCol"></select>
-        </div>
+        <div id="matWrap"></div>
+        <div class="expand-hint">행 번호 또는 열 번호를 클릭하여 <span>전개할 행/열</span>을 선택하세요</div>
       </div>
 
       <div class="panel">
@@ -297,42 +311,63 @@ header p { color:var(--text-dim); font-size:0.95em; max-width:750px; margin:0 au
 let n = 3;
 const DEPTH_COLORS = ['#58a6ff','#3fb950','#f0883e','#bc8cff','#ff6b6b','#ffd43b'];
 
+let expandMode = 'row'; // 'row' or 'col'
+let expandIdx = 0;
+
 function changeSize() {
   n = Math.max(1, Math.min(8, parseInt(document.getElementById('sizeInput').value) || 3));
   document.getElementById('sizeInput').value = n;
+  expandMode = 'row'; expandIdx = 0;
   buildMat();
-  buildExpandSelects();
 }
 
 function buildMat() {
   const w = document.getElementById('matWrap');
-  let h = '<span class="mat-bk">[</span>';
-  h += `<div class="mat-grid" style="grid-template-columns:repeat(${n},1fr);">`;
-  for (let i = 0; i < n; i++)
-    for (let j = 0; j < n; j++)
-      h += `<input type="text" id="m${i}_${j}" inputmode="decimal">`;
-  h += '</div><span class="mat-bk">]</span>';
+  // Grid: (1 corner + n col-hdrs) columns, (1 row of col-hdrs + n rows of [row-hdr + inputs])
+  let h = `<div class="mat-outer" style="grid-template-columns:32px repeat(${n},1fr);justify-content:center;display:inline-grid;">`;
+
+  // Top-left corner
+  h += '<div class="corner"></div>';
+  // Column headers
+  for (let j = 0; j < n; j++) {
+    const sel = expandMode === 'col' && expandIdx === j ? ' selected' : '';
+    h += `<div class="col-hdr${sel}" onclick="selectExpand('col',${j})" title="제 ${j+1} 열로 전개">C${j+1}</div>`;
+  }
+
+  // Rows
+  for (let i = 0; i < n; i++) {
+    const sel = expandMode === 'row' && expandIdx === i ? ' selected' : '';
+    h += `<div class="row-hdr${sel}" onclick="selectExpand('row',${i})" title="제 ${i+1} 행으로 전개">R${i+1}</div>`;
+    for (let j = 0; j < n; j++) {
+      h += `<input type="text" id="m${i}_${j}" inputmode="decimal" style="width:58px;height:38px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:0.9em;text-align:center;outline:none;">`;
+    }
+  }
+  h += '</div>';
   w.innerHTML = h;
+  // Apply initial highlight
+  selectExpand(expandMode, expandIdx);
 }
 
-function buildExpandSelects() {
-  let rh = '<option value="-1">— 선택 안함 —</option>';
-  let ch = '<option value="-1">— 선택 안함 —</option>';
+function selectExpand(mode, idx) {
+  expandMode = mode;
+  expandIdx = idx;
+  // Update header buttons
+  document.querySelectorAll('.col-hdr').forEach((el, j) => {
+    el.classList.toggle('selected', mode === 'col' && j === idx);
+  });
+  document.querySelectorAll('.row-hdr').forEach((el, i) => {
+    el.classList.toggle('selected', mode === 'row' && i === idx);
+  });
+  // Highlight input cells in the selected row/col
   for (let i = 0; i < n; i++) {
-    rh += `<option value="${i}"${i===0?' selected':''}>제 ${i+1} 행</option>`;
-    ch += `<option value="${i}">제 ${i+1} 열</option>`;
+    for (let j = 0; j < n; j++) {
+      const el = document.getElementById(`m${i}_${j}`);
+      if (!el) continue;
+      const hit = (mode === 'row' && i === idx) || (mode === 'col' && j === idx);
+      el.style.borderColor = hit ? 'var(--accent)' : 'var(--border)';
+      el.style.background = hit ? 'rgba(88,166,255,0.08)' : 'var(--bg)';
+    }
   }
-  document.getElementById('expandRow').innerHTML = rh;
-  document.getElementById('expandCol').innerHTML = ch;
-  document.getElementById('expandRow').value = '0';
-  document.getElementById('expandCol').value = '-1';
-  // Link: if row selected, deselect col and vice versa
-  document.getElementById('expandRow').onchange = function() {
-    if (this.value !== '-1') document.getElementById('expandCol').value = '-1';
-  };
-  document.getElementById('expandCol').onchange = function() {
-    if (this.value !== '-1') document.getElementById('expandRow').value = '-1';
-  };
 }
 
 function readMat() {
@@ -390,15 +425,13 @@ let nodeId = 0;
 
 function compute() {
   const mat = readMat();
-  const er = parseInt(document.getElementById('expandRow').value);
-  const ec = parseInt(document.getElementById('expandCol').value);
-  const expandByRow = er >= 0;
-  const expandIdx = expandByRow ? er : (ec >= 0 ? ec : 0);
+  const expandByRow = expandMode === 'row';
+  const expandI = expandIdx;
 
   stepsHtml = '';
   nodeId = 0;
 
-  const result = cofactorExpand(mat, n, 0, expandByRow, expandIdx);
+  const result = cofactorExpand(mat, n, 0, expandByRow, expandI);
 
   document.getElementById('stepsContent').innerHTML = stepsHtml;
   document.getElementById('resultVal').textContent = `det(A) = ${fr(result)}`;
@@ -613,7 +646,6 @@ function toggleDetail(id) {
 
 // Init
 buildMat();
-buildExpandSelects();
 </script>
 <script data-goatcounter="https://takwon-sungshin.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
